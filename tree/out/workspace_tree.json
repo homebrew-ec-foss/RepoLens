@@ -1,0 +1,124 @@
+{
+    "nodes": [
+        {
+            "id": "build_workspace_tree.py::15",
+            "parent_id": "build_workspace_tree.py::0",
+            "type": "import_statement",
+            "start_line": 3,
+            "end_line": 3,
+            "path": "build_workspace_tree.py",
+            "name": "json",
+            "summary": "This snippet imports the built-in library for parsing and generating JSON data."
+        },
+        {
+            "id": "build_workspace_tree.py::54",
+            "parent_id": "build_workspace_tree.py::0",
+            "type": "function_definition",
+            "start_line": 7,
+            "end_line": 10,
+            "path": "build_workspace_tree.py",
+            "name": "extract_code",
+            "summary": "This function reads a file and returns the content within a specified range of lines as a single string."
+        },
+        {
+            "id": "build_workspace_tree.py::122",
+            "parent_id": "build_workspace_tree.py::0",
+            "type": "function_definition",
+            "start_line": 11,
+            "end_line": 57,
+            "path": "build_workspace_tree.py",
+            "name": "build_full_workspace_tree",
+            "summary": "This function parses a directory of source code files to extract, summarize, and save structural metadata (classes, functions, and imports) into a hierarchical JSON workspace tree."
+        },
+        {
+            "id": "test.py::1",
+            "parent_id": "test.py::0",
+            "type": "import_statement",
+            "start_line": 1,
+            "end_line": 1,
+            "path": "test.py",
+            "name": "os",
+            "summary": "This line imports the Python standard library module for interacting with the operating system."
+        },
+        {
+            "id": "test.py::33",
+            "parent_id": "test.py::0",
+            "type": "function_definition",
+            "start_line": 6,
+            "end_line": 12,
+            "path": "test.py",
+            "name": "fetch_data",
+            "summary": "This function attempts to fetch data from a URL, retrying up to a specified number of times if a connection error occurs."
+        },
+        {
+            "id": "test.py::101",
+            "parent_id": "test.py::0",
+            "type": "function_definition",
+            "start_line": 14,
+            "end_line": 17,
+            "path": "test.py",
+            "name": "_make_request",
+            "summary": "This function validates that a URL starts with \"http\" and returns a dictionary containing the status code and the provided URL."
+        },
+        {
+            "id": "test.py::159",
+            "parent_id": "test.py::0",
+            "type": "class_definition",
+            "start_line": 19,
+            "end_line": 38,
+            "path": "test.py",
+            "name": "DataProcessor",
+            "summary": "The `DataProcessor` class provides a configurable framework for transforming input data, caching the results, and reporting processing statistics."
+        },
+        {
+            "id": "test.py::164",
+            "parent_id": "test.py::163",
+            "type": "function_definition",
+            "start_line": 20,
+            "end_line": 23,
+            "path": "test.py",
+            "name": "__init__",
+            "summary": "This code initializes an object with a data source, an optional transformation function, and an empty cache dictionary."
+        },
+        {
+            "id": "test.py::221",
+            "parent_id": "test.py::217",
+            "type": "function_definition",
+            "start_line": 26,
+            "end_line": 27,
+            "path": "test.py",
+            "name": "is_ready",
+            "summary": "The `is_ready` method checks if the `source` attribute has been initialized."
+        },
+        {
+            "id": "test.py::241",
+            "parent_id": "test.py::163",
+            "type": "function_definition",
+            "start_line": 29,
+            "end_line": 32,
+            "path": "test.py",
+            "name": "process",
+            "summary": "This method filters out `None` values, transforms the remaining items, caches the results, and returns them."
+        },
+        {
+            "id": "test.py::302",
+            "parent_id": "test.py::163",
+            "type": "function_definition",
+            "start_line": 34,
+            "end_line": 38,
+            "path": "test.py",
+            "name": "summary",
+            "summary": "This method returns a dictionary containing the total count of processed items and the current configuration."
+        },
+        {
+            "id": "test.py::347",
+            "parent_id": "test.py::0",
+            "type": "function_definition",
+            "start_line": 40,
+            "end_line": 43,
+            "path": "test.py",
+            "name": "run_pipeline",
+            "summary": "This function asynchronously fetches data from a list of URLs and processes it using a specified transformation."
+        }
+    ]
+}

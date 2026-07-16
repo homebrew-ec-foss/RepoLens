@@ -1,0 +1,140 @@
+[
+    {
+        ".env": {
+            "path": ".env",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": "."
+        }
+    },
+    {
+        "build_workspace_tree.py": {
+            "path": "build_workspace_tree.py",
+            "child_ids": [
+                "build_workspace_tree.py::15",
+                "build_workspace_tree.py::54",
+                "build_workspace_tree.py::122",
+                "build_workspace_tree.py::15",
+                "build_workspace_tree.py::54",
+                "build_workspace_tree.py::122"
+            ],
+            "summary": "This snippet imports the built-in library for parsing and generating JSON data.\nThis function reads a file and returns the content within a specified range of lines as a single string.\nThis function parses a directory of source code files to extract, summarize, and save structural metadata (classes, functions, and imports) into a hierarchical JSON workspace tree.\nThis snippet imports the built-in library for parsing and generating JSON data.\nThis function reads a file and returns the content within a specified range of lines as a single string.\nThis function parses a directory of source code files to extract, summarize, and save structural metadata (classes, functions, and imports) into a hierarchical JSON workspace tree.\nThis snippet imports the built-in library for parsing and generating JSON data.\nThis function reads a file and returns the content within a specified range of lines as a single string.\nThis function parses a directory of source code files to extract, summarize, and save structural metadata (classes, functions, and imports) into a hierarchical JSON workspace tree.\n",
+            "parent_dir": "."
+        }
+    },
+    {
+        "dir-1": {
+            "path": "dir-1",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": "."
+        }
+    },
+    {
+        "json_utils.py": {
+            "path": "json_utils.py",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": "."
+        }
+    },
+    {
+        "main.py": {
+            "path": "main.py",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": "."
+        }
+    },
+    {
+        "model.py": {
+            "path": "model.py",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": "."
+        }
+    },
+    {
+        "out": {
+            "path": "out",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": "."
+        }
+    },
+    {
+        "test.py": {
+            "path": "test.py",
+            "child_ids": [
+                "test.py::1",
+                "test.py::33",
+                "test.py::101",
+                "test.py::159",
+                "test.py::164",
+                "test.py::221",
+                "test.py::241",
+                "test.py::302",
+                "test.py::347",
+                "test.py::1",
+                "test.py::33",
+                "test.py::101",
+                "test.py::159",
+                "test.py::164",
+                "test.py::221",
+                "test.py::241",
+                "test.py::302",
+                "test.py::347"
+            ],
+            "summary": "This line imports the Python standard library module for interacting with the operating system.\nThis function attempts to fetch data from a URL, retrying up to a specified number of times if a connection error occurs.\nThis function validates that a URL starts with \"http\" and returns a dictionary containing the status code and the provided URL.\nThe `DataProcessor` class provides a configurable framework for transforming input data, caching the results, and reporting processing statistics.\nThis code initializes an object with a data source, an optional transformation function, and an empty cache dictionary.\nThe `is_ready` method checks if the `source` attribute has been initialized.\nThis method filters out `None` values, transforms the remaining items, caches the results, and returns them.\nThis method returns a dictionary containing the total count of processed items and the current configuration.\nThis function asynchronously fetches data from a list of URLs and processes it using a specified transformation.\nThis line imports the Python standard library module for interacting with the operating system.\nThis function attempts to fetch data from a URL, retrying up to a specified number of times if a connection error occurs.\nThis function validates that a URL starts with \"http\" and returns a dictionary containing the status code and the provided URL.\nThe `DataProcessor` class provides a configurable framework for transforming input data, caching the results, and reporting processing statistics.\nThis code initializes an object with a data source, an optional transformation function, and an empty cache dictionary.\nThe `is_ready` method checks if the `source` attribute has been initialized.\nThis method filters out `None` values, transforms the remaining items, caches the results, and returns them.\nThis method returns a dictionary containing the total count of processed items and the current configuration.\nThis function asynchronously fetches data from a list of URLs and processes it using a specified transformation.\nThis line imports the Python standard library module for interacting with the operating system.\nThis function attempts to fetch data from a URL, retrying up to a specified number of times if a connection error occurs.\nThis function validates that a URL starts with \"http\" and returns a dictionary containing the status code and the provided URL.\nThe `DataProcessor` class provides a configurable framework for transforming input data, caching the results, and reporting processing statistics.\nThis code initializes an object with a data source, an optional transformation function, and an empty cache dictionary.\nThe `is_ready` method checks if the `source` attribute has been initialized.\nThis method filters out `None` values, transforms the remaining items, caches the results, and returns them.\nThis method returns a dictionary containing the total count of processed items and the current configuration.\nThis function asynchronously fetches data from a list of URLs and processes it using a specified transformation.\n",
+            "parent_dir": "."
+        }
+    },
+    {
+        "__pycache__": {
+            "path": "__pycache__",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": "."
+        }
+    },
+    {
+        "dir-1\\meow.py": {
+            "path": "dir-1\\meow.py",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": "dir-1"
+        }
+    },
+    {
+        "out\\file_and_folders.json": {
+            "path": "out\\file_and_folders.json",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": "out"
+        }
+    },
+    {
+        "out\\workspace_tree.json": {
+            "path": "out\\workspace_tree.json",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": "out"
+        }
+    },
+    {
+        "__pycache__\\json_utils.cpython-314.pyc": {
+            "path": "__pycache__\\json_utils.cpython-314.pyc",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": "__pycache__"
+        }
+    },
+    {
+        "__pycache__\\model.cpython-314.pyc": {
+            "path": "__pycache__\\model.cpython-314.pyc",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": "__pycache__"
+        }
+    }
+]
