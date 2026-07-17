@@ -4,30 +4,26 @@
             "path": ".env",
             "child_ids": [],
             "summary": "",
-            "parent_dir": "."
+            "parent_dir": ".",
+            "type": "file"
         }
     },
     {
         "build_workspace_tree.py": {
             "path": "build_workspace_tree.py",
-            "child_ids": [
-                "build_workspace_tree.py::15",
-                "build_workspace_tree.py::54",
-                "build_workspace_tree.py::122",
-                "build_workspace_tree.py::15",
-                "build_workspace_tree.py::54",
-                "build_workspace_tree.py::122"
-            ],
-            "summary": "This snippet imports the built-in library for parsing and generating JSON data.\nThis function reads a file and returns the content within a specified range of lines as a single string.\nThis function parses a directory of source code files to extract, summarize, and save structural metadata (classes, functions, and imports) into a hierarchical JSON workspace tree.\nThis snippet imports the built-in library for parsing and generating JSON data.\nThis function reads a file and returns the content within a specified range of lines as a single string.\nThis function parses a directory of source code files to extract, summarize, and save structural metadata (classes, functions, and imports) into a hierarchical JSON workspace tree.\nThis snippet imports the built-in library for parsing and generating JSON data.\nThis function reads a file and returns the content within a specified range of lines as a single string.\nThis function parses a directory of source code files to extract, summarize, and save structural metadata (classes, functions, and imports) into a hierarchical JSON workspace tree.\n",
-            "parent_dir": "."
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": ".",
+            "type": "file"
         }
     },
     {
         "dir-1": {
             "path": "dir-1",
             "child_ids": [],
-            "summary": "",
-            "parent_dir": "."
+            "summary": "dir-1\\meow.py:This function takes two arguments and returns their sum.\nThis function takes two arguments and returns their difference.\nThis `Calculator` class provides a `compute` method that executes basic arithmetic operations based on a provided string identifier.\nThis code initializes a class instance with a `result` attribute set to zero.\nThis method performs a basic arithmetic operation (addition or subtraction) on two inputs and updates/returns the object's result.\n",
+            "parent_dir": ".",
+            "type": "directory"
         }
     },
     {
@@ -35,7 +31,8 @@
             "path": "json_utils.py",
             "child_ids": [],
             "summary": "",
-            "parent_dir": "."
+            "parent_dir": ".",
+            "type": "file"
         }
     },
     {
@@ -43,7 +40,8 @@
             "path": "main.py",
             "child_ids": [],
             "summary": "",
-            "parent_dir": "."
+            "parent_dir": ".",
+            "type": "file"
         }
     },
     {
@@ -51,15 +49,17 @@
             "path": "model.py",
             "child_ids": [],
             "summary": "",
-            "parent_dir": "."
+            "parent_dir": ".",
+            "type": "file"
         }
     },
     {
         "out": {
             "path": "out",
             "child_ids": [],
-            "summary": "",
-            "parent_dir": "."
+            "summary": "out\\file_and_folders.json:out\\workspace_tree.json:",
+            "parent_dir": ".",
+            "type": "directory"
         }
     },
     {
@@ -74,35 +74,35 @@
                 "test.py::221",
                 "test.py::241",
                 "test.py::302",
-                "test.py::347",
-                "test.py::1",
-                "test.py::33",
-                "test.py::101",
-                "test.py::159",
-                "test.py::164",
-                "test.py::221",
-                "test.py::241",
-                "test.py::302",
                 "test.py::347"
             ],
-            "summary": "This line imports the Python standard library module for interacting with the operating system.\nThis function attempts to fetch data from a URL, retrying up to a specified number of times if a connection error occurs.\nThis function validates that a URL starts with \"http\" and returns a dictionary containing the status code and the provided URL.\nThe `DataProcessor` class provides a configurable framework for transforming input data, caching the results, and reporting processing statistics.\nThis code initializes an object with a data source, an optional transformation function, and an empty cache dictionary.\nThe `is_ready` method checks if the `source` attribute has been initialized.\nThis method filters out `None` values, transforms the remaining items, caches the results, and returns them.\nThis method returns a dictionary containing the total count of processed items and the current configuration.\nThis function asynchronously fetches data from a list of URLs and processes it using a specified transformation.\nThis line imports the Python standard library module for interacting with the operating system.\nThis function attempts to fetch data from a URL, retrying up to a specified number of times if a connection error occurs.\nThis function validates that a URL starts with \"http\" and returns a dictionary containing the status code and the provided URL.\nThe `DataProcessor` class provides a configurable framework for transforming input data, caching the results, and reporting processing statistics.\nThis code initializes an object with a data source, an optional transformation function, and an empty cache dictionary.\nThe `is_ready` method checks if the `source` attribute has been initialized.\nThis method filters out `None` values, transforms the remaining items, caches the results, and returns them.\nThis method returns a dictionary containing the total count of processed items and the current configuration.\nThis function asynchronously fetches data from a list of URLs and processes it using a specified transformation.\nThis line imports the Python standard library module for interacting with the operating system.\nThis function attempts to fetch data from a URL, retrying up to a specified number of times if a connection error occurs.\nThis function validates that a URL starts with \"http\" and returns a dictionary containing the status code and the provided URL.\nThe `DataProcessor` class provides a configurable framework for transforming input data, caching the results, and reporting processing statistics.\nThis code initializes an object with a data source, an optional transformation function, and an empty cache dictionary.\nThe `is_ready` method checks if the `source` attribute has been initialized.\nThis method filters out `None` values, transforms the remaining items, caches the results, and returns them.\nThis method returns a dictionary containing the total count of processed items and the current configuration.\nThis function asynchronously fetches data from a list of URLs and processes it using a specified transformation.\n",
-            "parent_dir": "."
+            "summary": "This snippet imports the `os` module to provide a portable way of using operating system-dependent functionality.\nThis function attempts to fetch data from a given URL, retrying up to a specified number of times if a connection error occurs.\nThis function validates that a URL starts with \"http\" and returns a dictionary containing its status and the URL itself.\nThe `DataProcessor` class provides a configurable framework for transforming input data, caching the results, and reporting processing statistics.\nThis code initializes a class by storing a data source, an optional transformation function (defaulting to identity), and an empty cache dictionary.\nThis method returns a boolean indicating whether the `source` attribute has been initialized.\nThe `process` method transforms a list of non-null items, caches the results, and returns them.\nThis method returns a dictionary containing the total count of processed items and the current configuration.\nThis function asynchronously fetches data from a list of URLs and processes it using a specified transformation.\n",
+            "parent_dir": ".",
+            "type": "file"
         }
     },
     {
         "__pycache__": {
             "path": "__pycache__",
             "child_ids": [],
-            "summary": "",
-            "parent_dir": "."
+            "summary": "__pycache__\\build_workspace_tree.cpython-314.pyc:__pycache__\\json_utils.cpython-314.pyc:__pycache__\\model.cpython-314.pyc:",
+            "parent_dir": ".",
+            "type": "directory"
         }
     },
     {
         "dir-1\\meow.py": {
             "path": "dir-1\\meow.py",
-            "child_ids": [],
-            "summary": "",
-            "parent_dir": "dir-1"
+            "child_ids": [
+                "dir-1\\meow.py::1",
+                "dir-1\\meow.py::18",
+                "dir-1\\meow.py::35",
+                "dir-1\\meow.py::40",
+                "dir-1\\meow.py::56"
+            ],
+            "summary": "This function takes two arguments and returns their sum.\nThis function takes two arguments and returns their difference.\nThis `Calculator` class provides a `compute` method that executes basic arithmetic operations based on a provided string identifier.\nThis code initializes a class instance with a `result` attribute set to zero.\nThis method performs a basic arithmetic operation (addition or subtraction) on two inputs and updates/returns the object's result.\n",
+            "parent_dir": "dir-1",
+            "type": "file"
         }
     },
     {
@@ -110,7 +110,8 @@
             "path": "out\\file_and_folders.json",
             "child_ids": [],
             "summary": "",
-            "parent_dir": "out"
+            "parent_dir": "out",
+            "type": "file"
         }
     },
     {
@@ -118,7 +119,17 @@
             "path": "out\\workspace_tree.json",
             "child_ids": [],
             "summary": "",
-            "parent_dir": "out"
+            "parent_dir": "out",
+            "type": "file"
+        }
+    },
+    {
+        "__pycache__\\build_workspace_tree.cpython-314.pyc": {
+            "path": "__pycache__\\build_workspace_tree.cpython-314.pyc",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": "__pycache__",
+            "type": "file"
         }
     },
     {
@@ -126,7 +137,8 @@
             "path": "__pycache__\\json_utils.cpython-314.pyc",
             "child_ids": [],
             "summary": "",
-            "parent_dir": "__pycache__"
+            "parent_dir": "__pycache__",
+            "type": "file"
         }
     },
     {
@@ -134,7 +146,8 @@
             "path": "__pycache__\\model.cpython-314.pyc",
             "child_ids": [],
             "summary": "",
-            "parent_dir": "__pycache__"
+            "parent_dir": "__pycache__",
+            "type": "file"
         }
     }
 ]

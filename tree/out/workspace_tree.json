@@ -1,36 +1,6 @@
 {
     "nodes": [
         {
-            "id": "build_workspace_tree.py::15",
-            "parent_id": "build_workspace_tree.py::0",
-            "type": "import_statement",
-            "start_line": 3,
-            "end_line": 3,
-            "path": "build_workspace_tree.py",
-            "name": "json",
-            "summary": "This snippet imports the built-in library for parsing and generating JSON data."
-        },
-        {
-            "id": "build_workspace_tree.py::54",
-            "parent_id": "build_workspace_tree.py::0",
-            "type": "function_definition",
-            "start_line": 7,
-            "end_line": 10,
-            "path": "build_workspace_tree.py",
-            "name": "extract_code",
-            "summary": "This function reads a file and returns the content within a specified range of lines as a single string."
-        },
-        {
-            "id": "build_workspace_tree.py::122",
-            "parent_id": "build_workspace_tree.py::0",
-            "type": "function_definition",
-            "start_line": 11,
-            "end_line": 57,
-            "path": "build_workspace_tree.py",
-            "name": "build_full_workspace_tree",
-            "summary": "This function parses a directory of source code files to extract, summarize, and save structural metadata (classes, functions, and imports) into a hierarchical JSON workspace tree."
-        },
-        {
             "id": "test.py::1",
             "parent_id": "test.py::0",
             "type": "import_statement",
@@ -38,7 +8,7 @@
             "end_line": 1,
             "path": "test.py",
             "name": "os",
-            "summary": "This line imports the Python standard library module for interacting with the operating system."
+            "summary": "This snippet imports the `os` module to provide a portable way of using operating system-dependent functionality."
         },
         {
             "id": "test.py::33",
@@ -48,7 +18,7 @@
             "end_line": 12,
             "path": "test.py",
             "name": "fetch_data",
-            "summary": "This function attempts to fetch data from a URL, retrying up to a specified number of times if a connection error occurs."
+            "summary": "This function attempts to fetch data from a given URL, retrying up to a specified number of times if a connection error occurs."
         },
         {
             "id": "test.py::101",
@@ -58,7 +28,7 @@
             "end_line": 17,
             "path": "test.py",
             "name": "_make_request",
-            "summary": "This function validates that a URL starts with \"http\" and returns a dictionary containing the status code and the provided URL."
+            "summary": "This function validates that a URL starts with \"http\" and returns a dictionary containing its status and the URL itself."
         },
         {
             "id": "test.py::159",
@@ -78,7 +48,7 @@
             "end_line": 23,
             "path": "test.py",
             "name": "__init__",
-            "summary": "This code initializes an object with a data source, an optional transformation function, and an empty cache dictionary."
+            "summary": "This code initializes a class by storing a data source, an optional transformation function (defaulting to identity), and an empty cache dictionary."
         },
         {
             "id": "test.py::221",
@@ -88,7 +58,7 @@
             "end_line": 27,
             "path": "test.py",
             "name": "is_ready",
-            "summary": "The `is_ready` method checks if the `source` attribute has been initialized."
+            "summary": "This method returns a boolean indicating whether the `source` attribute has been initialized."
         },
         {
             "id": "test.py::241",
@@ -98,7 +68,7 @@
             "end_line": 32,
             "path": "test.py",
             "name": "process",
-            "summary": "This method filters out `None` values, transforms the remaining items, caches the results, and returns them."
+            "summary": "The `process` method transforms a list of non-null items, caches the results, and returns them."
         },
         {
             "id": "test.py::302",
@@ -119,6 +89,56 @@
             "path": "test.py",
             "name": "run_pipeline",
             "summary": "This function asynchronously fetches data from a list of URLs and processes it using a specified transformation."
+        },
+        {
+            "id": "dir-1\\meow.py::1",
+            "parent_id": "dir-1\\meow.py::0",
+            "type": "function_definition",
+            "start_line": 1,
+            "end_line": 2,
+            "path": "dir-1\\meow.py",
+            "name": "add",
+            "summary": "This function takes two arguments and returns their sum."
+        },
+        {
+            "id": "dir-1\\meow.py::18",
+            "parent_id": "dir-1\\meow.py::0",
+            "type": "function_definition",
+            "start_line": 5,
+            "end_line": 6,
+            "path": "dir-1\\meow.py",
+            "name": "subtract",
+            "summary": "This function takes two arguments and returns their difference."
+        },
+        {
+            "id": "dir-1\\meow.py::35",
+            "parent_id": "dir-1\\meow.py::0",
+            "type": "class_definition",
+            "start_line": 9,
+            "end_line": 18,
+            "path": "dir-1\\meow.py",
+            "name": "Calculator",
+            "summary": "This `Calculator` class provides a `compute` method that executes basic arithmetic operations based on a provided string identifier."
+        },
+        {
+            "id": "dir-1\\meow.py::40",
+            "parent_id": "dir-1\\meow.py::39",
+            "type": "function_definition",
+            "start_line": 10,
+            "end_line": 11,
+            "path": "dir-1\\meow.py",
+            "name": "__init__",
+            "summary": "This code initializes a class instance with a `result` attribute set to zero."
+        },
+        {
+            "id": "dir-1\\meow.py::56",
+            "parent_id": "dir-1\\meow.py::39",
+            "type": "function_definition",
+            "start_line": 13,
+            "end_line": 18,
+            "path": "dir-1\\meow.py",
+            "name": "compute",
+            "summary": "This method performs a basic arithmetic operation (addition or subtraction) on two inputs and updates/returns the object's result."
         }
     ]
 }

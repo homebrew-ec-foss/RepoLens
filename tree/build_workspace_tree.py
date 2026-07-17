@@ -12,7 +12,7 @@ def extract_code(file_path,start_line,end_line):
     return ''.join(lines[start_line-1:end_line])
 def build_full_workspace_tree(root_dir):
     required = ['import_statement','function_definition','class_definition']
-    ignored_files = ['model.py','modified_tree.py','json_utils.py','model.py']
+    ignored_files = ['model.py','modified_tree.py','json_utils.py','build_workspace_tree.py','main.py']
     root = Path(root_dir).resolve()
     files = [f for f in root.rglob("*") if f.suffix in EXT_TO_LANG and f.name not in ignored_files]
 
@@ -59,7 +59,29 @@ def build_full_workspace_tree(root_dir):
     with open("out/workspace_tree.json", "w") as f:
         json.dump(json_output, f, indent=4)
 
+def add_to_dir_summary(summary, parent_dir,file):
+    result, idx = obj.find_key_in_json_file("out/file_and_folders.json", parent_dir)
+    if result != -1:
+        result[idx][parent_dir]['summary'] += f"{file}:" + summary
+        return result
+    else:
+        return None
+def compile_directory_summaries_from_files():
+    list_of_files = obj.find_directories_for_files("out/file_and_folders.json")
 
+    for path,parent_dir in list_of_files.items():
+        if parent_dir == '.':
+            continue
+
+        
+        result,idx = obj.find_key_in_json_file("out/file_and_folders.json", path)
+        if result != -1:
+            summary = result[idx][path]['summary']
+            res = add_to_dir_summary(summary, parent_dir,path)
+
+            with open("out/file_and_folders.json", "w") as f:
+                    json.dump(res, f, indent=4)            
+            
 
 def compile_summaries():
     with open("out/workspace_tree.json", "r") as f:
@@ -78,4 +100,4 @@ def compile_summaries():
 
 if __name__ == "__main__":
     #build_full_workspace_tree(".")
-    compile_summaries()
+    compile_directory_summaries_from_files()

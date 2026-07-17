@@ -28,10 +28,19 @@ class JSONUtils:
                 return data,i
         print(f"Key not found: {key}")
         return -1,-1
+    def find_directories_for_files(self, json_file):
+        with open(json_file, 'r') as f:
+            data = json.load(f)
+        file_to_directory = {}
+        for ele in data:
+            for key, value in ele.items():
+                if value['type'] == 'file':
+                    file_to_directory[key] = value['parent_dir']
+        return file_to_directory
 
     
 if __name__ == "__main__":
     obj = JSONUtils(".")
-    obj.get_file_and_folders()
+    print(obj.find_directories_for_files("out/file_and_folders.json"))
     #result, idx = obj.find_key_in_json_file("out/file_and_folders.json", "test.py")
     #print(f"Index of 'test.py': {idx}")
