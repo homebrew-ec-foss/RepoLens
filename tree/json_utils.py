@@ -35,8 +35,6 @@ class JSONUtils:
             ele = data[i]
             val = (str(list(ele.keys())[0]))
             if val == key:
-                print(f"Found key: {key} at index {i}")
-                print(f"Value: {ele[val]['summary']}")
                 return data,i
         print(f"Key not found: {key}")
         return -1,-1
