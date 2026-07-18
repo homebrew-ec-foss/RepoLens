@@ -1,0 +1,207 @@
+[
+    {
+        ".env": {
+            "path": ".env",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": ".",
+            "type": "file"
+        }
+    },
+    {
+        "build_workspace_tree.py": {
+            "path": "build_workspace_tree.py",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": ".",
+            "type": "file"
+        }
+    },
+    {
+        "dir-1": {
+            "path": "dir-1",
+            "child_ids": [
+                "dir-1\\dir",
+                "dir-1\\dir"
+            ],
+            "summary": "dir-1\\dir:dir-1\\dir\\meow.py:This function takes two arguments and returns their sum.\nThis function takes two arguments and returns their difference.\nThis `Calculator` class provides a `compute` method that routes addition or subtraction tasks based on a specified operation string.\nThis code initializes a class instance with a `result` attribute set to zero.\nThis method executes a specified arithmetic operation (add or subtract) on two inputs and returns the result.\n",
+            "parent_dir": ".",
+            "type": "directory",
+            "level": 1
+        }
+    },
+    {
+        "json_utils.py": {
+            "path": "json_utils.py",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": ".",
+            "type": "file"
+        }
+    },
+    {
+        "main.py": {
+            "path": "main.py",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": ".",
+            "type": "file"
+        }
+    },
+    {
+        "model.py": {
+            "path": "model.py",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": ".",
+            "type": "file"
+        }
+    },
+    {
+        "os_utils.py": {
+            "path": "os_utils.py",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": ".",
+            "type": "file"
+        }
+    },
+    {
+        "out": {
+            "path": "out",
+            "child_ids": [
+                "out\\files_and_folders.json",
+                "out\\max_level.txt",
+                "out\\workspace_tree.json"
+            ],
+            "summary": "",
+            "parent_dir": ".",
+            "type": "directory",
+            "level": 1
+        }
+    },
+    {
+        "test.py": {
+            "path": "test.py",
+            "child_ids": [
+                "test.py::1",
+                "test.py::33",
+                "test.py::101",
+                "test.py::159",
+                "test.py::164",
+                "test.py::221",
+                "test.py::241",
+                "test.py::302",
+                "test.py::347"
+            ],
+            "summary": "This line imports Python's built-in module for interacting with the operating system.\nThis function attempts to fetch data from a URL, retrying up to a specified number of times if a connection error occurs.\nThis function validates that a URL starts with \"http\" and returns a dictionary containing a success status and the provided URL.\nThe `DataProcessor` class provides a configurable interface to transform input data, cache the results, and generate summary statistics.\nThis code initializes a class instance with a data source, an optional transformation function, and an empty dictionary to cache results.\nThe `is_ready` method returns a boolean indicating whether the `source` attribute has been set.\nThis method transforms a list of non-null items, caches the results, and returns them.\nThis method returns a dictionary containing the total count of processed items and the current configuration.\nThis function fetches data from a list of URLs and processes it using a specified transformation.\n",
+            "parent_dir": ".",
+            "type": "file"
+        }
+    },
+    {
+        "__pycache__": {
+            "path": "__pycache__",
+            "child_ids": [
+                "__pycache__\\build_workspace_tree.cpython-314.pyc",
+                "__pycache__\\json_utils.cpython-314.pyc",
+                "__pycache__\\model.cpython-314.pyc",
+                "__pycache__\\os_utils.cpython-314.pyc"
+            ],
+            "summary": "",
+            "parent_dir": ".",
+            "type": "directory",
+            "level": 1
+        }
+    },
+    {
+        "dir-1\\dir": {
+            "path": "dir-1\\dir",
+            "child_ids": [
+                "dir-1\\dir\\meow.py"
+            ],
+            "summary": "dir-1\\dir\\meow.py:This function takes two arguments and returns their sum.\nThis function takes two arguments and returns their difference.\nThis `Calculator` class provides a `compute` method that routes addition or subtraction tasks based on a specified operation string.\nThis code initializes a class instance with a `result` attribute set to zero.\nThis method executes a specified arithmetic operation (add or subtract) on two inputs and returns the result.\n",
+            "parent_dir": "dir-1",
+            "type": "directory",
+            "level": 2
+        }
+    },
+    {
+        "out\\files_and_folders.json": {
+            "path": "out\\files_and_folders.json",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": "out",
+            "type": "file"
+        }
+    },
+    {
+        "out\\max_level.txt": {
+            "path": "out\\max_level.txt",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": "out",
+            "type": "file"
+        }
+    },
+    {
+        "out\\workspace_tree.json": {
+            "path": "out\\workspace_tree.json",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": "out",
+            "type": "file"
+        }
+    },
+    {
+        "__pycache__\\build_workspace_tree.cpython-314.pyc": {
+            "path": "__pycache__\\build_workspace_tree.cpython-314.pyc",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": "__pycache__",
+            "type": "file"
+        }
+    },
+    {
+        "__pycache__\\json_utils.cpython-314.pyc": {
+            "path": "__pycache__\\json_utils.cpython-314.pyc",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": "__pycache__",
+            "type": "file"
+        }
+    },
+    {
+        "__pycache__\\model.cpython-314.pyc": {
+            "path": "__pycache__\\model.cpython-314.pyc",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": "__pycache__",
+            "type": "file"
+        }
+    },
+    {
+        "__pycache__\\os_utils.cpython-314.pyc": {
+            "path": "__pycache__\\os_utils.cpython-314.pyc",
+            "child_ids": [],
+            "summary": "",
+            "parent_dir": "__pycache__",
+            "type": "file"
+        }
+    },
+    {
+        "dir-1\\dir\\meow.py": {
+            "path": "dir-1\\dir\\meow.py",
+            "child_ids": [
+                "dir-1\\dir\\meow.py::1",
+                "dir-1\\dir\\meow.py::18",
+                "dir-1\\dir\\meow.py::35",
+                "dir-1\\dir\\meow.py::40",
+                "dir-1\\dir\\meow.py::56"
+            ],
+            "summary": "This function takes two arguments and returns their sum.\nThis function takes two arguments and returns their difference.\nThis `Calculator` class provides a `compute` method that routes addition or subtraction tasks based on a specified operation string.\nThis code initializes a class instance with a `result` attribute set to zero.\nThis method executes a specified arithmetic operation (add or subtract) on two inputs and returns the result.\n",
+            "parent_dir": "dir-1\\dir",
+            "type": "file"
+        }
+    }
+]
