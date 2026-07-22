@@ -1,5 +1,5 @@
-from build_workspace_tree import *
-from json_utils import JSONUtils
+from tree_sitter.build_workspace_tree import *
+from tree_sitter.json_utils import JSONUtils
 from clone_repo import clone_repo
 if __name__ == "__main__":
     url = input("Enter the url of the repo: ")
