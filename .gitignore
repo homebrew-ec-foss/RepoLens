@@ -3,4 +3,3 @@ tree_sitter/__pycache__/
 tree_sitter/.env
 venv/
 __pycache__/
-tree_sitter/__init__.py
