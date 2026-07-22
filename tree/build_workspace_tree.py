@@ -1,8 +1,8 @@
 from pathlib import Path
 from tree_sitter_language_pack import get_parser
 import json
-from model import AIModel
-from json_utils import JSONUtils
+from .model import AIModel
+from .json_utils import JSONUtils
 ignored_files = ['model.py','build_workspace_tree.py','json_utils.py','main.py','os_utils.py']
 obj = JSONUtils(".",ignored_files)
 EXT_TO_LANG = {".py": "python"}

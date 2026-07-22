@@ -1,6 +1,6 @@
 from pathlib import Path
 import json
-from os_utils import *
+from .os_utils import *
 class JSONUtils:
     def __init__(self,dir,ignored_files):
         self.dir = dir
