@@ -6,6 +6,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, status
 
 from app.models.schemas import RepoRequest, StatusResponse
+from app.services import edges as edges_svc
 from app.services import github as github_svc
 from app.services import nodes as nodes_svc
 from app.services import summaries as summaries_svc
@@ -63,6 +64,24 @@ async def post_nodes() -> StatusResponse:
         status="ok",
         detail=f"nodes.json written to {out_path}",
     )
+
+
+@router.post("/edges", response_model=StatusResponse, status_code=status.HTTP_200_OK)
+async def post_edges() -> StatusResponse:
+    logger.info("POST /edges")
+    try:
+        out_path: Path = edges_svc.generate_edges()
+    except RuntimeError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    except Exception as exc:
+        logger.exception("Unexpected error in /edges")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
+
+    return StatusResponse(
+        status="ok",
+        detail=f"edges.json written to {out_path}",
+    )
+
 
 @router.post("/summary", response_model=StatusResponse, status_code=status.HTTP_200_OK)
 async def post_summary() -> StatusResponse:

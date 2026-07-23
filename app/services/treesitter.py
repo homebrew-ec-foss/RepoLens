@@ -35,6 +35,12 @@ MAGIKA_TO_TS: dict[str, Optional[str]] = {
     "pythonbytecode": None,
 }
 
+PYTHON_IMPORT_TYPES: frozenset[str] = frozenset({
+    "import_statement",
+    "import_from_statement",
+    "future_import_statement",
+})
+
 # this needs revision
 DEFAULT_NODE_TYPES: frozenset[str] = frozenset({
     "function_definition",
@@ -97,13 +103,24 @@ def _detect_language(path: Path) -> str | None:
 
 def _node_name(ts_node) -> str | None:
     name_node = ts_node.child_by_field_name("name")
-    if name_node is None:
-        return None
-    return name_node.text.decode("utf-8", errors="replace")
+    if name_node is not None:
+        return name_node.text.decode("utf-8", errors="replace")
+    # even decorators can have internal functions and stuff
+    if ts_node.type == "decorated_definition":
+        for child in ts_node.children:
+            if child.type in ("function_definition", "class_definition"):
+                inner_title = _node_name(child)
+                if inner_title:
+                    return inner_title
+
+    text = ts_node.text.decode("utf-8", errors="replace").strip()
+    first_line = text.splitlines()[0] if text else ""
+    if len(first_line) > 60:
+        first_line = first_line[:57] + "..."
+    return first_line or ts_node.type
 
 
 def _extract_raw_nodes(path: Path, language: str) -> list[dict]:
-    node_types = LANGUAGE_NODE_TYPES.get(language, DEFAULT_NODE_TYPES)
     try:
         parser = get_parser(language)
         ts_tree = parser.parse(path.read_bytes())
@@ -112,6 +129,45 @@ def _extract_raw_nodes(path: Path, language: str) -> list[dict]:
 
     abs_path = str(path.resolve())
     raw_nodes: list[dict] = []
+
+    if language == "python":
+        def traverse(node):
+            if node.type == "module":
+                for child in node.children:
+                    traverse(child)
+                return
+
+            if node.type in PYTHON_IMPORT_TYPES:
+                return
+
+            if node.type == "block":
+                for child in node.children:
+                    traverse(child)
+                return
+
+            raw_nodes.append({
+                "id":         _new_id(),
+                "path":       abs_path,
+                "language":   language,
+                "node_type":  node.type,
+                "title":      _node_name(node),
+                "start_line": node.start_point[0] + 1,
+                "end_line":   node.end_point[0] + 1,
+                "summary":    "",
+            })
+
+            for child in node.children:
+                if child.type in (
+                    "block", "function_definition", "class_definition",
+                    "decorated_definition", "if_statement", "for_statement",
+                    "while_statement", "try_statement", "with_statement", "match_statement"
+                ):
+                    traverse(child)
+
+        traverse(ts_tree.root_node)
+        return raw_nodes
+
+    node_types = LANGUAGE_NODE_TYPES.get(language, DEFAULT_NODE_TYPES)
     stack = [ts_tree.root_node]
 
     while stack:
@@ -156,7 +212,6 @@ class _Entry:
         if self.entry_type == "file":
             d["node_ids"] = [n["id"] for n in self.raw_nodes]
             # I have embeded raw node metadata so nodes.py can read it without re-parsing.
-            d["nodes"] = self.raw_nodes
         d["children"] = [c.to_dict() for c in self.children]
         return d
 
@@ -213,11 +268,19 @@ def run_treesitter() -> Path:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(structure, indent=2), encoding="utf-8")
 
-    total_nodes = sum(
-        len(n.raw_nodes) for n in _iter_file_entries(root_entry)
-    )
+    all_raw_nodes: list[dict] = []
+    for file_entry in _iter_file_entries(root_entry):
+        for node in file_entry.raw_nodes:
+            node["parent_id"] = file_entry.id
+            all_raw_nodes.append(node)
+
+    state.raw_nodes = all_raw_nodes
+
+    raw_nodes_path = (state.out_dir / ".raw_nodes.json").resolve()
+    raw_nodes_path.write_text(json.dumps(all_raw_nodes, indent=2), encoding="utf-8")
+
     logger.info(
-        "filestructure.json written: %d code nodes across the repository", total_nodes
+        "filestructure.json written: %d code nodes across the repository", len(all_raw_nodes)
     )
     return out_path
 
