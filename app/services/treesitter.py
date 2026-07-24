@@ -33,6 +33,25 @@ MAGIKA_TO_TS: dict[str, Optional[str]] = {
     "coffeescript": None,
     "javabytecode": None,
     "pythonbytecode": None,
+    "asm": None,              
+    "csv": None,
+    "tsv": None,
+    "ini": None,               
+    "diff": None,
+    "rst": None,               # tree-sitter-rst exists but low adoption; verify
+    "tex": None,               # tree-sitter-latex exists; verify naming if you need it
+    "svg": None,               # just XML under the hood — could map to "xml" instead of None if you want structure
+    "powershell": None,        # tree-sitter-powershell exists but less mature; verify
+    "groovy": None,            # tree-sitter-groovy exists but less standardized; verify
+    "fsharp": None,
+    "matlab": None,
+    "r": None,                 # tree-sitter-r exists; verify maturity before enabling
+    "cmake": None,             # tree-sitter-cmake exists but niche
+    "protobuf": None,          # tree-sitter-proto exists; verify
+    "graphql": None,     
+    "vbnet": "vb",
+    "batch": "bat",
+    "jsx": "tsx",
 }
 
 # this needs revision
@@ -47,21 +66,137 @@ DEFAULT_NODE_TYPES: frozenset[str] = frozenset({
 
 # THIS NEEDS REVISION!!!!!!!!
 LANGUAGE_NODE_TYPES: dict[str, frozenset[str]] = {
-    "python":     frozenset({"function_definition", "class_definition"}),
-    "javascript": frozenset({"function_declaration", "class_declaration", "method_definition"}),
-    "typescript": frozenset({"function_declaration", "class_declaration", "method_definition", "interface_declaration"}),
-    "tsx":        frozenset({"function_declaration", "class_declaration", "method_definition", "interface_declaration"}),
-    "java":       frozenset({"class_declaration", "interface_declaration", "method_declaration", "constructor_declaration"}),
-    "csharp":     frozenset({"class_declaration", "interface_declaration", "method_declaration", "constructor_declaration"}),
-    "go":         frozenset({"function_declaration", "method_declaration", "type_declaration"}),
-    "rust":       frozenset({"function_item", "struct_item", "impl_item", "trait_item", "enum_item"}),
-    "c":          frozenset({"function_definition", "struct_specifier"}),
-    "cpp":        frozenset({"function_definition", "class_specifier", "struct_specifier"}),
-    "ruby":       frozenset({"method", "class", "module"}),
-    "php":        frozenset({"function_definition", "class_declaration", "method_declaration"}),
-    "kotlin":     frozenset({"function_declaration", "class_declaration", "object_declaration"}),
-    "swift":      frozenset({"function_declaration", "class_declaration", "protocol_declaration"}),
-    "scala":      frozenset({"function_definition", "class_definition", "object_definition", "trait_definition"}),
+    "python": frozenset({
+        "function_definition", "class_definition", "decorated_definition",
+        "import_statement", "import_from_statement",
+        "assignment", "decorator"
+    }),
+    "javascript": frozenset({
+        "function_declaration", "class_declaration", "method_definition",
+        "generator_function_declaration",
+        "import_statement", "export_statement",
+        "variable_declaration", "lexical_declaration"
+    }),
+    "typescript": frozenset({
+        "function_declaration", "class_declaration", "method_definition",
+        "interface_declaration", "type_alias_declaration", "enum_declaration",
+        "generator_function_declaration", "module",
+        "import_statement", "export_statement",
+        "variable_declaration", "lexical_declaration", "decorator"
+    }),
+    "tsx": frozenset({
+        "function_declaration", "class_declaration", "method_definition",
+        "interface_declaration", "type_alias_declaration", "enum_declaration",
+        "generator_function_declaration", "module",
+        "import_statement", "export_statement",
+        "variable_declaration", "lexical_declaration", "decorator"
+    }),
+    "java": frozenset({
+        "class_declaration", "interface_declaration", "method_declaration",
+        "constructor_declaration", "enum_declaration", "record_declaration",
+        "annotation_type_declaration",
+        "import_declaration", "package_declaration",
+        "field_declaration", "annotation"
+    }),
+    "csharp": frozenset({
+        "class_declaration", "interface_declaration", "method_declaration",
+        "constructor_declaration", "struct_declaration", "enum_declaration",
+        "record_declaration", "delegate_declaration",
+        "using_directive", "namespace_declaration",
+        "property_declaration", "field_declaration", "attribute"
+    }),
+    "go": frozenset({
+        "function_declaration", "method_declaration", "type_declaration",
+        "const_declaration",
+        "import_declaration", "package_clause",
+        "var_declaration"
+    }),
+    "rust": frozenset({
+        "function_item", "struct_item", "impl_item", "trait_item",
+        "enum_item", "mod_item", "union_item", "type_item",
+        "macro_definition",
+        "use_declaration", "extern_crate_declaration",
+        "const_item", "static_item", "attribute_item"
+    }),
+    "c": frozenset({
+        "function_definition", "struct_specifier", "enum_specifier",
+        "union_specifier", "type_definition",
+        "preproc_include", "preproc_def"
+    }),
+    "cpp": frozenset({
+        "function_definition", "class_specifier", "struct_specifier",
+        "enum_specifier", "union_specifier", "namespace_definition",
+        "template_declaration", "type_definition",
+        "preproc_include", "using_declaration", "preproc_def"
+    }),
+    "ruby": frozenset({
+        "method", "class", "module", "singleton_method",
+        "call"
+    }),
+    "php": frozenset({
+        "function_definition", "class_declaration", "method_declaration",
+        "interface_declaration", "trait_declaration", "enum_declaration",
+        "namespace_definition",
+        "namespace_use_declaration", "include_expression", "require_expression",
+        "property_declaration"
+    }),
+    "kotlin": frozenset({
+        "function_declaration", "class_declaration", "object_declaration",
+        "property_declaration",
+        "import_header", "package_header",
+        "annotation"
+    }),
+    "swift": frozenset({
+        "function_declaration", "class_declaration", "protocol_declaration",
+        "struct_declaration", "enum_declaration", "extension_declaration",
+        "typealias_declaration", "init_declaration",
+        "import_declaration",
+        "property_declaration", "attribute"
+    }),
+    "scala": frozenset({
+        "function_definition", "class_definition", "object_definition",
+        "trait_definition",
+        "import_declaration", "package_clause",
+        "val_definition", "var_definition", "annotation"
+    }),
+
+    # --- Markup / config / infra languages ---
+    "html": frozenset({
+        "element", "script_element", "style_element", "doctype"
+    }),
+    "css": frozenset({
+        "rule_set", "media_statement", "keyframes_statement",
+        "import_statement", "at_rule"
+    }),
+    "json": frozenset({
+        "pair", "object", "array"
+    }),
+    "yaml": frozenset({
+        "block_mapping_pair", "block_sequence_item", "document"
+    }),
+    "toml": frozenset({
+        "table", "table_array_element", "pair"
+    }),
+    "dockerfile": frozenset({
+        "from_instruction", "run_instruction", "cmd_instruction",
+        "entrypoint_instruction", "copy_instruction", "add_instruction",
+        "env_instruction", "expose_instruction", "volume_instruction",
+        "workdir_instruction", "arg_instruction", "user_instruction",
+        "label_instruction"
+    }),
+    "bash": frozenset({
+        "function_definition", "command", "variable_assignment",
+        "declaration_command"
+    }),
+    "sql": frozenset({
+        "create_table", "create_view", "create_function_statement",
+        "create_index_statement", "alter_table", "select_statement",
+        "insert_statement", "update_statement", "delete_statement"
+    }),
+    "markdown": frozenset({
+        "atx_heading", "setext_heading", "fenced_code_block",
+        "link_reference_definition"
+    }),
 }
 
 _SUPPORTED_TS_LANGUAGES: frozenset[str] = frozenset(SupportedLanguage.__args__)
