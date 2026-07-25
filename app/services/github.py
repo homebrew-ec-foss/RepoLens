@@ -8,6 +8,7 @@ from pathlib import Path
 import os
 from app.storage.state import state
 import stat
+import platform
 logger = logging.getLogger(__name__)
 
 # prehand regex for parsing GitHub URLs
@@ -34,7 +35,11 @@ async def clone_repo(github_url: str) -> Path:
 
     if target.exists():
         logger.info("Removing existing clone at %s", target)
-        shutil.rmtree(target,onexc=remove_readonly)
+        if platform.system() == "Windows":
+
+            shutil.rmtree(target,onexc=remove_readonly)
+        else:
+            shutil.rmtree(target)
 
     target.parent.mkdir(parents=True, exist_ok=True)
 
