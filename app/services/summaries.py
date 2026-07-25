@@ -15,8 +15,8 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-_MODEL = os.getenv("REPOLENS_SUMMARY_MODEL", "gemini-3.5-flash")
-_BATCH_SIZE = int(os.getenv("REPOLENS_BATCH_SIZE", "10"))
+_MODEL = os.getenv("REPOLENS_SUMMARY_MODEL", "gemini-3.1-flash-lite")
+_BATCH_SIZE = int(os.getenv("REPOLENS_BATCH_SIZE", "1000"))
 
 _client: genai.Client | None = None
 
@@ -68,6 +68,7 @@ def _summarize_node_batch(batch: list[dict]) -> dict[str, str]:
         config=types.GenerateContentConfig(response_mime_type="application/json"),
     )
     try:
+        logger.info(response.text)
         data = json.loads(response.text)
         return {str(k): str(v) for k, v in data.items()} if isinstance(data, dict) else {}
     except (json.JSONDecodeError, TypeError):
@@ -89,7 +90,7 @@ def _concat_summaries(summaries: list[str], labels: list[str] | None = None) -> 
     cleaned = [s.strip() for s in summaries if s and s.strip()]
     return "\n".join(cleaned)
 
-def _stage1_summarize_nodes(nodes: list[dict]) -> None:
+def _stage1_summarize_nodes(nodes: list[dict]):
     pending = [n for n in nodes if not n.get("summary")]
 
     if not pending:
@@ -107,16 +108,44 @@ def _stage1_summarize_nodes(nodes: list[dict]) -> None:
     for node in nodes:
         if node["id"] in all_summaries:
             node["summary"] = all_summaries[node["id"]]
-
+    
     logger.info("Stage 1 complete: %d node summaries populated", len(all_summaries))
 
-
+def find_node_summary(node_id):
+    root = Path(__file__).resolve().parent.parent.parent
+    nodes_path = root / "out" / "nodes.json"
+    with open(nodes_path,'r') as f:
+        data = json.load(f)
+        data = data['nodes']
+        for ele in data:
+            if ele['id'] == node_id:
+                return ele['summary']  
+    return None
+def copy_node_summaries_from_node_to_tree(nodes):
+    res = []
+    for node in nodes:
+        data = find_node_summary(node)
+        if data:
+            res.append(data)
+    return res
 def _stage2_file_summaries(structure: dict, node_index: dict[str, dict]) -> None:
     if structure.get("type") == "file":
         node_ids: list[str] = structure.get("node_ids", [])
         summaries = [node_index[nid]["summary"] for nid in node_ids if nid in node_index and node_index[nid].get("summary")]
         labels = [node_index[nid].get("title") or nid for nid in node_ids if nid in node_index and node_index[nid].get("summary")]
         structure["summary"] = _concat_summaries(summaries, labels)
+
+        if "type" in structure and structure['type'] == 'file':
+            nodes = structure['node_ids']
+            res = copy_node_summaries_from_node_to_tree(nodes)
+            if res:
+                j = 0
+                for i in range(len(structure['nodes'])):
+                    if j < len(res):
+
+                        structure['nodes'][i]['summary'] = res[j]
+                        j+=1
+
         return
 
     for child in structure.get("children", []):
