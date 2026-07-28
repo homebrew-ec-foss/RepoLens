@@ -5,9 +5,10 @@ import logging
 import re
 import shutil
 from pathlib import Path
-
+import os
 from app.storage.state import state
-
+import stat
+import platform
 logger = logging.getLogger(__name__)
 
 # prehand regex for parsing GitHub URLs
@@ -21,6 +22,9 @@ def _parse_github_url(url: str) -> tuple[str, str]:
     return m.group("owner"), m.group("repo")
 
 
+def remove_readonly(func,path,exc):
+    os.chmod(path,stat.S_IWRITE)
+    func(path)
 async def clone_repo(github_url: str) -> Path:
     owner, repo_name = _parse_github_url(github_url)
 
@@ -31,7 +35,11 @@ async def clone_repo(github_url: str) -> Path:
 
     if target.exists():
         logger.info("Removing existing clone at %s", target)
-        shutil.rmtree(target)
+        if platform.system() == "Windows":
+
+            shutil.rmtree(target,onexc=remove_readonly)
+        else:
+            shutil.rmtree(target)
 
     target.parent.mkdir(parents=True, exist_ok=True)
 
