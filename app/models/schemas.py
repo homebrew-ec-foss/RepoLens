@@ -28,3 +28,6 @@ class NodeResponse(BaseModel):
     parent_id: str | None
     children_ids: list[str]
     summary: str
+
+class QueryRequest(BaseModel):
+    query: str
