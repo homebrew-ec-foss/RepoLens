@@ -10,6 +10,7 @@ from app.services import github as github_svc
 from app.services import nodes as nodes_svc
 from app.services import summaries as summaries_svc
 from app.services import treesitter as ts_svc
+from app.services import keyword_search
 from app.storage.state import state
 from app.services.classifier import classify
 logger = logging.getLogger(__name__)
@@ -86,8 +87,17 @@ async def post_summary() -> StatusResponse:
 @router.post("/query",response_model=StatusResponse,status_code=status.HTTP_200_OK)
 async def user_query(body: QueryRequest) -> StatusResponse:
         logger.info("POST /query")
+        message = ''
         try:
             res = classify(body.query)
+            # Semantic Search
+            if res == 0:
+                pass
+
+            # Keyword search: BM25
+            else:
+                res = keyword_search.answer_query(body.query)
+                
         except RuntimeError as exc:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
         except Exception as exc:
@@ -97,6 +107,6 @@ async def user_query(body: QueryRequest) -> StatusResponse:
         return StatusResponse(
             status="ok",
             detail=(
-                f"result = {res}"
+                f"Selected nodes = {res}"
             ),
         )
