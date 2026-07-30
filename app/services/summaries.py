@@ -16,7 +16,7 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 _MODEL = os.getenv("REPOLENS_SUMMARY_MODEL", "gemini-3.1-flash-lite")
-_BATCH_SIZE = int(os.getenv("REPOLENS_BATCH_SIZE", "1000"))
+_BATCH_SIZE = int(os.getenv("REPOLENS_BATCH_SIZE", "250"))
 
 _client: genai.Client | None = None
 

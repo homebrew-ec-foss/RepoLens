@@ -5,14 +5,14 @@ from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, status
 
-from app.models.schemas import RepoRequest, StatusResponse
-from app.services import edges as edges_svc
+from app.models.schemas import RepoRequest, StatusResponse,QueryRequest
 from app.services import github as github_svc
 from app.services import nodes as nodes_svc
 from app.services import summaries as summaries_svc
 from app.services import treesitter as ts_svc
+from app.services import keyword_search
 from app.storage.state import state
-
+from app.services.classifier import classify
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
@@ -101,3 +101,30 @@ async def post_summary() -> StatusResponse:
             f"Root summary length: {result['root_summary_length']} chars."
         ),
     )
+
+@router.post("/query",response_model=StatusResponse,status_code=status.HTTP_200_OK)
+async def user_query(body: QueryRequest) -> StatusResponse:
+        logger.info("POST /query")
+        message = ''
+        try:
+            res = classify(body.query)
+            # Semantic Search
+            if res == 0:
+                pass
+
+            # Keyword search: BM25
+            else:
+                res = keyword_search.answer_query(body.query)
+                
+        except RuntimeError as exc:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+        except Exception as exc:
+            logger.exception("Unexpected error in /summary")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
+    
+        return StatusResponse(
+            status="ok",
+            detail=(
+                f"Selected nodes = {res}"
+            ),
+        )
