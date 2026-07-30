@@ -97,6 +97,15 @@ async def user_query(body: QueryRequest) -> StatusResponse:
             # Keyword search: BM25
             else:
                 res = keyword_search.answer_query(body.query)
+                    
+                final_res = {
+                        "Name":res['title'],
+                        "Path":res['path'],
+                        "language":f"{res['language']}",
+                        "Summary":res['summary'],
+                        "line_range":f"{res['start_line']} - {res['end_line']}",
+                }
+                    
                 
         except RuntimeError as exc:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
@@ -107,6 +116,6 @@ async def user_query(body: QueryRequest) -> StatusResponse:
         return StatusResponse(
             status="ok",
             detail=(
-                f"Selected nodes = {res}"
+                f"{final_res}"
             ),
         )
