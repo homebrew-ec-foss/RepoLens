@@ -13,6 +13,7 @@ from app.services import treesitter as ts_svc
 from app.services import keyword_search
 from app.storage.state import state
 from app.services.classifier import classify
+from app.services.nodes import retrieve_parent_and_child_nodes,answer_query_with_context
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
@@ -97,14 +98,29 @@ async def user_query(body: QueryRequest) -> StatusResponse:
             # Keyword search: BM25
             else:
                 res = keyword_search.answer_query(body.query)
-                    
+                try:
+
+                    res = res[0]
+                except:
+                    pass
+                else:
+
+                    parent_node = retrieve_parent_and_child_nodes(res['parent_id'])['parent_node']
                 final_res = {
+                    "node":{
                         "Name":res['title'],
                         "Path":res['path'],
                         "language":f"{res['language']}",
                         "Summary":res['summary'],
                         "line_range":f"{res['start_line']} - {res['end_line']}",
+                    },
+                    "parent_node":parent_node,
+                    "child_nodes":[
+                        retrieve_parent_and_child_nodes(res['parent_id'], res[id])['child_node'] for id in res['children_ids']
+                    ]
+                    
                 }
+                ans = answer_query_with_context(final_res, body.query)
                     
                 
         except RuntimeError as exc:
@@ -116,6 +132,6 @@ async def user_query(body: QueryRequest) -> StatusResponse:
         return StatusResponse(
             status="ok",
             detail=(
-                f"{final_res}"
+                f"answer: {ans}"
             ),
         )
