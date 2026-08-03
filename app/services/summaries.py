@@ -115,41 +115,12 @@ def _stage1_summarize_nodes(nodes: list[dict]):
     
     logger.info("Stage 1 complete: %d semantic node summaries populated", len(all_summaries))
 
-def find_node_summary(node_id):
-    root = Path(__file__).resolve().parent.parent.parent
-    nodes_path = root / "out" / "nodes.json"
-    with open(nodes_path,'r') as f:
-        data = json.load(f)
-        data = data['nodes']
-        for ele in data:
-            if ele['id'] == node_id:
-                return ele['summary']  
-    return None
-def copy_node_summaries_from_node_to_tree(nodes):
-    res = []
-    for node in nodes:
-        data = find_node_summary(node)
-        if data:
-            res.append(data)
-    return res
 def _stage2_file_summaries(structure: dict, node_index: dict[str, dict]) -> None:
     if structure.get("type") == "file":
         node_ids: list[str] = structure.get("node_ids", [])
         summaries = [node_index[nid]["summary"] for nid in node_ids if nid in node_index and node_index[nid].get("summary")]
         labels = [node_index[nid].get("title") or nid for nid in node_ids if nid in node_index and node_index[nid].get("summary")]
         structure["summary"] = _concat_summaries(summaries, labels)
-
-        if "type" in structure and structure['type'] == 'file':
-            nodes = structure['node_ids']
-            res = copy_node_summaries_from_node_to_tree(nodes)
-            if res:
-                j = 0
-                for i in range(len(structure['nodes'])):
-                    if j < len(res):
-
-                        structure['nodes'][i]['summary'] = res[j]
-                        j+=1
-
         return
 
     for child in structure.get("children", []):

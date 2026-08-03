@@ -18,7 +18,7 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-_QDRANT_URL = "http://localhost:6333"
+_QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 _COLLECTION = "repolens"
 _VECTOR_DIM = 768
 _UPSERT_BATCH_SIZE = 100
