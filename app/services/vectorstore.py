@@ -24,7 +24,7 @@ _VECTOR_DIM = 768
 _UPSERT_BATCH_SIZE = 100
 
 # the random seed for qdrant uuid generator 
-_NAMESPACE = uuid.UUID("anish-ishaan-harsh-prajwal")
+_NAMESPACE = uuid.UUID("7c53f8bb-fd95-4a91-bc1c-6b9b7d2e65ef")
 
 _client: QdrantClient | None = None
 
