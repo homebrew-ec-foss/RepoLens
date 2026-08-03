@@ -191,6 +191,9 @@ def generate_edges() -> Path:
             "filestructure.json not found. Call POST /tree first."
         )
 
+    if state.repo_path is None:
+        raise RuntimeError("No repository cloned. Call POST /repo first.")
+
     _reset_edge_ids()
     structure: dict = json.loads(filestructure_path.read_text(encoding="utf-8"))
 

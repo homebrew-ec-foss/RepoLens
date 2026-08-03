@@ -8,7 +8,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-
+from app.services.treesitter import should_summarize_node
 from app.storage.state import state
 
 load_dotenv()
@@ -91,13 +91,17 @@ def _concat_summaries(summaries: list[str], labels: list[str] | None = None) -> 
     return "\n".join(cleaned)
 
 def _stage1_summarize_nodes(nodes: list[dict]):
-    pending = [n for n in nodes if not n.get("summary")]
+    pending = [n for n in nodes if not n.get("summary") and should_summarize_node(n)]
+    
+    for n in nodes:
+        if not n.get("summary") and not should_summarize_node(n):
+            n["summary"] = None
 
     if not pending:
-        logger.info("Stage 1: all nodes already summarized, skipping")
+        logger.info("Stage 1: all summarizable nodes already summarized, skipping")
         return
 
-    logger.info("Stage 1: summarizing %d code nodes in batches of %d", len(pending), _BATCH_SIZE)
+    logger.info("Stage 1: summarizing %d semantic nodes in batches of %d", len(pending), _BATCH_SIZE)
 
     all_summaries: dict[str, str] = {}
     for start in range(0, len(pending), _BATCH_SIZE):
@@ -109,7 +113,7 @@ def _stage1_summarize_nodes(nodes: list[dict]):
         if node["id"] in all_summaries:
             node["summary"] = all_summaries[node["id"]]
     
-    logger.info("Stage 1 complete: %d node summaries populated", len(all_summaries))
+    logger.info("Stage 1 complete: %d semantic node summaries populated", len(all_summaries))
 
 def find_node_summary(node_id):
     root = Path(__file__).resolve().parent.parent.parent

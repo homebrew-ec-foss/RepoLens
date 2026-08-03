@@ -4,15 +4,19 @@ import logging
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, status
+from fastapi.responses import FileResponse
 
-from app.models.schemas import RepoRequest, StatusResponse,QueryRequest
+from app.models.schemas import RepoRequest, StatusResponse, QueryRequest, RAGAnswer
 from app.services import github as github_svc
 from app.services import nodes as nodes_svc
 from app.services import summaries as summaries_svc
 from app.services import treesitter as ts_svc
-from app.services import keyword_search
+from app.services import edges as edges_svc
+from app.services import rag as rag_svc
+from app.services import vectorstore as vectorstore_svc
+from app.services import content as content_svc
 from app.storage.state import state
-from app.services.classifier import classify
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
@@ -102,29 +106,53 @@ async def post_summary() -> StatusResponse:
         ),
     )
 
-@router.post("/query",response_model=StatusResponse,status_code=status.HTTP_200_OK)
-async def user_query(body: QueryRequest) -> StatusResponse:
-        logger.info("POST /query")
-        message = ''
-        try:
-            res = classify(body.query)
-            # Semantic Search
-            if res == 0:
-                pass
+@router.post("/index", response_model=StatusResponse, status_code=status.HTTP_200_OK)
+async def post_index() -> StatusResponse:
+    logger.info("POST /index")
+    try:
+        result = vectorstore_svc.index_nodes()
+    except RuntimeError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    except Exception as exc:
+        logger.exception("Unexpected error in /index")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
 
-            # Keyword search: BM25
-            else:
-                res = keyword_search.answer_query(body.query)
-                
-        except RuntimeError as exc:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
-        except Exception as exc:
-            logger.exception("Unexpected error in /summary")
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
-    
-        return StatusResponse(
-            status="ok",
-            detail=(
-                f"Selected nodes = {res}"
-            ),
-        )
+    return StatusResponse(
+        status="ok",
+        detail=(
+            f"Indexed {result['indexed']} nodes into Qdrant collection "
+            f"'{result['collection']}' (dim {result['vector_dim']})"
+        ),
+    )
+
+
+@router.post("/ask", response_model=RAGAnswer, status_code=status.HTTP_200_OK)
+async def ask(body: QueryRequest) -> RAGAnswer:
+    logger.info("POST /ask query=%s", body.query)
+    try:
+        return RAGAnswer(**rag_svc.answer_query(body.query))
+    except RuntimeError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    except Exception as exc:
+        logger.exception("Unexpected error in /ask")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
+
+
+@router.get("/content/{node_id}", status_code=status.HTTP_200_OK)
+async def get_content(node_id: str):
+    logger.info("GET /content/%s", node_id)
+    result = content_svc.get_node_content(node_id)
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Unknown node id: {node_id}")
+    return result
+
+
+@router.get("/data/{file_name}", status_code=status.HTTP_200_OK)
+async def get_data_file(file_name: str):
+    safe_name = Path(file_name).name
+    if safe_name != file_name:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file name")
+    path = (state.out_dir / safe_name).resolve()
+    if not path.is_file():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{file_name} not found in out directory")
+    return FileResponse(path, media_type="application/json")
