@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse
 
 from app.models.schemas import RepoRequest, StatusResponse, QueryRequest, RAGAnswer
 from app.services import github as github_svc
+from app.services import keyword_search as keyword_search_svc
 from app.services import nodes as nodes_svc
 from app.services import summaries as summaries_svc
 from app.services import treesitter as ts_svc
@@ -135,6 +136,16 @@ async def ask(body: QueryRequest) -> RAGAnswer:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
     except Exception as exc:
         logger.exception("Unexpected error in /ask")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
+
+
+@router.get("/search", status_code=status.HTTP_200_OK)
+async def search(query: str):
+    logger.info("GET /search query=%s", query)
+    try:
+        return {"results": keyword_search_svc.search_nodes(query)}
+    except Exception as exc:
+        logger.exception("Unexpected error in /search")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
 
 

@@ -1281,10 +1281,26 @@ window.addEventListener('keydown', e=>{
 });
 paletteInput.addEventListener('input', ()=> runSearch(paletteInput.value));
 
-function runSearch(q){
-  q = q.trim().toLowerCase();
-  let results = [];
+let latestSearchRequest = 0;
+
+async function runSearch(q){
+  q = String(q || '').trim();
   if(!S.fsById.size){ renderPaletteResults([]); return; }
+
+  if(q){
+    const requestId = ++latestSearchRequest;
+    const bm25Results = await bm25Search(q);
+    if(requestId !== latestSearchRequest) return;
+    if(bm25Results.length){
+      renderPaletteResults(formatBm25Results(bm25Results));
+      return;
+    }
+  }
+  runLocalSearch(q.toLowerCase());
+}
+
+function runLocalSearch(q){
+  const results = [];
   const fsMatches = [], codeMatches = [];
   S.fsById.forEach(n=>{
     if(!q || n.name.toLowerCase().includes(q)) fsMatches.push(n);
@@ -1296,12 +1312,72 @@ function runSearch(q){
   });
   fsMatches.sort((a,b)=>a.name.length-b.name.length);
   codeMatches.sort((a,b)=>(a.title||'').length-(b.title||'').length);
-  results = [
+  const formatted = [
     ...fsMatches.slice(0,8).map(n=>({id:n.id, group:n.type==='file'?'Files':'Folders', label:n.name, sub:shortPath(n.path), kind:fsIconKind(n), color:fsColor(n)})),
     ...codeMatches.slice(0,12).map(n=>({id:n.id, group:'Symbols', label:(n.title||'').slice(0,60), sub:shortPath(n.path)+` · L${n.start_line}`, kind:codeIconKind(n), color:codeColor(n)})),
   ];
-  renderPaletteResults(results);
+  renderPaletteResults(formatted);
 }
+
+async function bm25Search(q){
+  try{
+    const resp = await fetch(`/search?query=${encodeURIComponent(q)}`, {cache:'no-store'});
+    if(!resp.ok) return [];
+    const data = await resp.json();
+    return Array.isArray(data.results) ? data.results : [];
+  }catch(err){
+    console.warn('BM25 search failed', err);
+    return [];
+  }
+}
+
+function paletteIconForNode(node){
+  if(node.node_type === 'repository' || node.node_type === 'folder' || node.node_type === 'file') return fsIconKind(node);
+  return codeIconKind(node);
+}
+
+function paletteColorForNode(node){
+  if(node.node_type === 'repository' || node.node_type === 'folder' || node.node_type === 'file') return fsColor(node);
+  return codeColor(node);
+}
+
+function formatPaletteItem(node, group, labelPrefix=''){
+  const title = node.title || node.node_type || node.id;
+  const prefix = labelPrefix ? `${labelPrefix}: ` : '';
+  const line = node.start_line ? ` · L${node.start_line}` : '';
+  return {
+    id: node.id,
+    group,
+    label: `${prefix}${title}`.slice(0,60),
+    sub: `${shortPath(node.path || '')}${line}`,
+    kind: paletteIconForNode(node),
+    color: paletteColorForNode(node),
+  };
+}
+
+function formatBm25Results(items){
+  const seen = new Set();
+  const results = [];
+  items.forEach(item=>{
+    if(!seen.has(item.id)){
+      results.push(formatPaletteItem(item, 'Matches'));
+      seen.add(item.id);
+    }
+    const parent = item.parent;
+    if(parent && parent.id && !seen.has(parent.id)){
+      results.push(formatPaletteItem(parent, 'Parents', 'Parent'));
+      seen.add(parent.id);
+    }
+    (item.children || []).forEach(child=>{
+      if(child && child.id && !seen.has(child.id)){
+        results.push(formatPaletteItem(child, 'Children', 'Child'));
+        seen.add(child.id);
+      }
+    });
+  });
+  return results;
+}
+
 function renderPaletteResults(results){
   paletteItems = results;
   paletteActive = results.length ? 0 : -1;
