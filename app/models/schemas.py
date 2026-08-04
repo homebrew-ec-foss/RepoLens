@@ -31,3 +31,23 @@ class NodeResponse(BaseModel):
 
 class QueryRequest(BaseModel):
     query: str
+
+class Citation(BaseModel):
+    id: str | None = None
+    kind: str | None = None
+    title: str | None = None
+    node_type: str | None = None
+    language: str | None = None
+    path: str | None = None
+    start_line: int | None = None
+    end_line: int | None = None
+    chain: list[str] = []
+    summary: str | None = None
+    score: float | None = None
+
+class RAGAnswer(BaseModel):
+    query: str
+    mode: str
+    answer: str
+    citations: list[Citation] = []
+    retrieved: list[Citation] = []

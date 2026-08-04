@@ -8,7 +8,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-
+from app.services.treesitter import should_summarize_node
 from app.storage.state import state
 
 load_dotenv()
@@ -91,13 +91,17 @@ def _concat_summaries(summaries: list[str], labels: list[str] | None = None) -> 
     return "\n".join(cleaned)
 
 def _stage1_summarize_nodes(nodes: list[dict]):
-    pending = [n for n in nodes if not n.get("summary")]
+    pending = [n for n in nodes if not n.get("summary") and should_summarize_node(n)]
+    
+    for n in nodes:
+        if not n.get("summary") and not should_summarize_node(n):
+            n["summary"] = None
 
     if not pending:
-        logger.info("Stage 1: all nodes already summarized, skipping")
+        logger.info("Stage 1: all summarizable nodes already summarized, skipping")
         return
 
-    logger.info("Stage 1: summarizing %d code nodes in batches of %d", len(pending), _BATCH_SIZE)
+    logger.info("Stage 1: summarizing %d semantic nodes in batches of %d", len(pending), _BATCH_SIZE)
 
     all_summaries: dict[str, str] = {}
     for start in range(0, len(pending), _BATCH_SIZE):
@@ -109,43 +113,14 @@ def _stage1_summarize_nodes(nodes: list[dict]):
         if node["id"] in all_summaries:
             node["summary"] = all_summaries[node["id"]]
     
-    logger.info("Stage 1 complete: %d node summaries populated", len(all_summaries))
+    logger.info("Stage 1 complete: %d semantic node summaries populated", len(all_summaries))
 
-def find_node_summary(node_id):
-    root = Path(__file__).resolve().parent.parent.parent
-    nodes_path = root / "out" / "nodes.json"
-    with open(nodes_path,'r') as f:
-        data = json.load(f)
-        data = data['nodes']
-        for ele in data:
-            if ele['id'] == node_id:
-                return ele['summary']  
-    return None
-def copy_node_summaries_from_node_to_tree(nodes):
-    res = []
-    for node in nodes:
-        data = find_node_summary(node)
-        if data:
-            res.append(data)
-    return res
 def _stage2_file_summaries(structure: dict, node_index: dict[str, dict]) -> None:
     if structure.get("type") == "file":
         node_ids: list[str] = structure.get("node_ids", [])
         summaries = [node_index[nid]["summary"] for nid in node_ids if nid in node_index and node_index[nid].get("summary")]
         labels = [node_index[nid].get("title") or nid for nid in node_ids if nid in node_index and node_index[nid].get("summary")]
         structure["summary"] = _concat_summaries(summaries, labels)
-
-        if "type" in structure and structure['type'] == 'file':
-            nodes = structure['node_ids']
-            res = copy_node_summaries_from_node_to_tree(nodes)
-            if res:
-                j = 0
-                for i in range(len(structure['nodes'])):
-                    if j < len(res):
-
-                        structure['nodes'][i]['summary'] = res[j]
-                        j+=1
-
         return
 
     for child in structure.get("children", []):
