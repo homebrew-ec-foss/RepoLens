@@ -16,7 +16,11 @@ _GITHUB_RE = re.compile(r"^https?://github\.com/(?P<owner>[^/]+)/(?P<repo>[^/]+?
 
 
 def _parse_github_url(url: str) -> tuple[str, str]:
-    m = _GITHUB_RE.match(url.rstrip("/"))
+    url = url.strip().rstrip("/")
+    if url.endswith(".git"):
+        url = url[:-4]
+    url = url.rstrip(".") # remove accidental trailing dots
+    m = _GITHUB_RE.match(url)
     if not m:
         raise ValueError(f"Not a valid GitHub repository URL: {url!r}")
     return m.group("owner"), m.group("repo")
@@ -45,15 +49,17 @@ async def clone_repo(github_url: str) -> Path:
 
     logger.info("Cloning %s :%s", clone_url, target)
 
-    proc = await asyncio.create_subprocess_exec(
-        "git", "clone", "--depth=1", clone_url, str(target),
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    stdout, stderr = await proc.communicate()
+    import subprocess
+    def run_git_clone():
+        return subprocess.run(
+            ["git", "clone", "--depth=1", clone_url, str(target)],
+            capture_output=True,
+            text=True
+        )
+    proc = await asyncio.to_thread(run_git_clone)
 
     if proc.returncode != 0:
-        err = stderr.decode(errors="replace").strip()
+        err = proc.stderr.strip()
         raise RuntimeError(f"git clone failed (exit {proc.returncode}): {err}")
 
     logger.info("Clone complete: %s", target)

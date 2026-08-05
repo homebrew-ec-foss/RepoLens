@@ -63,18 +63,28 @@ def _summarize_node_batch(batch: list[dict]) -> dict[str, str]:
     )
     prompt = _NODE_PROMPT.format(count=len(batch), snippets=snippets)
 
-    response = _get_client().models.generate_content(
-        model=_MODEL,
-        contents=prompt,
-        config=types.GenerateContentConfig(response_mime_type="application/json"),
-    )
-    try:
-        logger.info(response.text)
-        data = json.loads(response.text)
-        return {str(k): str(v) for k, v in data.items()} if isinstance(data, dict) else {}
-    except (json.JSONDecodeError, TypeError):
-        logger.warning("Failed to parse LLM response for node batch")
-        return {}
+    import time
+    client = _get_client()
+    for attempt in range(5):
+        try:
+            response = client.models.generate_content(
+                model=_MODEL,
+                contents=prompt,
+                config=types.GenerateContentConfig(response_mime_type="application/json"),
+            )
+            logger.info(response.text)
+            data = json.loads(response.text)
+            return {str(k): str(v) for k, v in data.items()} if isinstance(data, dict) else {}
+        except Exception as e:
+            if attempt < 4 and ("429" in str(e) or "RESOURCE_EXHAUSTED" in str(e) or "quota" in str(e).lower()):
+                sleep_time = 15 * (attempt + 1)
+                logger.warning(f"Rate limit hit in summary. Retrying in {sleep_time}s...")
+                time.sleep(sleep_time)
+            else:
+                if attempt == 4 or isinstance(e, (json.JSONDecodeError, TypeError)):
+                    logger.warning("Failed to parse LLM response for node batch")
+                    return {}
+    return {}
 
 def _concat_summaries(summaries: list[str], labels: list[str] | None = None) -> str:
     if not summaries:

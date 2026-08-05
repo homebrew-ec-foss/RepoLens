@@ -4,13 +4,13 @@ from google.genai import types
 from dotenv import load_dotenv
 
 load_dotenv()
-try:
+_client = None
 
-    client = genai.Client()
-
-except:
-    client = None 
-
+def _get_client():
+    global _client
+    if _client is None:
+        _client = genai.Client()
+    return _client
 model = "gemini-3.1-flash-lite"
 
 
@@ -62,10 +62,10 @@ def classify(query: str) -> int:
         prompt = build_prompt(query)
     except:
         return _heuristic_classify(query)
-    if client is None or types is None:
+    if _get_client() is None or types is None:
         return _heuristic_classify(query)
 
-    response = client.models.generate_content(
+    response = _get_client().models.generate_content(
             model=model,
             contents=prompt,
             config=types.GenerateContentConfig(response_mime_type="application/json"),

@@ -32,7 +32,13 @@ _client: QdrantClient | None = None
 def get_client() -> QdrantClient:
     global _client
     if _client is None:
-        _client = QdrantClient(url=_QDRANT_URL)
+        qdrant_url = os.getenv("QDRANT_URL")
+        if qdrant_url:
+            _client = QdrantClient(url=qdrant_url)
+        else:
+            db_path = state.out_dir / "qdrant_db"
+            db_path.mkdir(exist_ok=True, parents=True)
+            _client = QdrantClient(path=str(db_path))
     return _client
 
 
