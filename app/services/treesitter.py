@@ -489,6 +489,7 @@ class _Entry:
         if self.entry_type == "file":
             d["node_ids"] = [n["id"] for n in self.raw_nodes]
             # I have embeded raw node metadata so nodes.py can read it without re-parsing.
+            d["nodes"] = self.raw_nodes
         d["children"] = [c.to_dict() for c in self.children]
         return d
 

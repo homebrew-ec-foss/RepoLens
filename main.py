@@ -8,6 +8,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import router
 from app.storage.state import state
@@ -41,6 +42,8 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     state.out_dir = Path(os.getenv("REPOLENS_OUT_DIR", "out")).resolve() # uses the storage class singleton method
     state.out_dir.mkdir(parents=True, exist_ok=True)
+    if state.gemini_api_key:
+        os.environ["GEMINI_API_KEY"] = state.gemini_api_key
     logger.info("Starting Repolens at : %s", state.out_dir)
     yield
     logger.info("RepoLens shutting down")
@@ -57,6 +60,7 @@ app = FastAPI(
 # if i define all routes here, 
 # hence i moved them
 app.include_router(router)
+app.mount('/static', StaticFiles(directory='frontend'), name='static')
 
 
 @app.get("/", include_in_schema=False)
