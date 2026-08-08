@@ -4,14 +4,16 @@ import json
 import logging
 import os
 import re
+import time
 import uuid
 from pathlib import Path
 
 from dotenv import load_dotenv
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qmodels
+from tqdm import tqdm
 
-from app.services.embeddings import EMBED_MODEL_NAME, embed_query, embed_texts
+from app.services.embeddings import EMBED_DIM, EMBED_MODEL_NAME, embed_query, embed_texts
 from app.storage.state import state
 
 load_dotenv()
@@ -20,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 _QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 _COLLECTION = "repolens"
-_VECTOR_DIM = 768
+_VECTOR_DIM = EMBED_DIM
 _UPSERT_BATCH_SIZE = 100
 
 # the random seed for qdrant uuid generator 
@@ -170,9 +172,16 @@ def index_nodes() -> dict:
     nodes: list[dict] = json.loads(nodes_path.read_text(encoding="utf-8"))["nodes"]
     structure: dict = json.loads(structure_path.read_text(encoding="utf-8"))
 
+    t0 = time.perf_counter()
     documents = _build_documents(nodes, structure)
     if not documents:
         raise RuntimeError("No summarized nodes found. Call POST /summary first.")
+    logger.info(
+        "Built %d documents to index in %.2fs (embedding model: %s)",
+        len(documents),
+        time.perf_counter() - t0,
+        EMBED_MODEL_NAME,
+    )
 
     client = get_client()
     name = _collection_name()
@@ -186,7 +195,10 @@ def index_nodes() -> dict:
         ),
     )
 
+    logger.info("Embedding %d documents one-by-one...", len(documents))
+    t1 = time.perf_counter()
     vectors = embed_texts([doc["text"] for doc in documents])
+    logger.info("Embedded %d vectors in %.2fs", len(vectors), time.perf_counter() - t1)
 
     points: list[qmodels.PointStruct] = []
     for doc, vector in zip(documents, vectors):
@@ -198,11 +210,18 @@ def index_nodes() -> dict:
             payload=payload,
         ))
 
-    for start in range(0, len(points), _UPSERT_BATCH_SIZE):
+    logger.info("Prepared %d points, upserting in batches of %d", len(points), _UPSERT_BATCH_SIZE)
+    t2 = time.perf_counter()
+    for start in tqdm(
+        range(0, len(points), _UPSERT_BATCH_SIZE),
+        desc="Upserting to Qdrant",
+        unit="batch",
+    ):
         client.upsert(
             collection_name=name,
             points=points[start:start + _UPSERT_BATCH_SIZE],
         )
+    logger.info("Upsert complete: %d points in %.2fs", len(points), time.perf_counter() - t2)
 
     logger.info("Indexed %d points into collection %s", len(points), name)
     return {
