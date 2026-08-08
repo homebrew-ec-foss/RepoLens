@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
+import json
 
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import FileResponse
 
-from app.models.schemas import RepoRequest, StatusResponse, QueryRequest, RAGAnswer, ConfigRequest, HealthResponse, ConfigResponse
+from app.models.schemas import RepoRequest, LocalRepoRequest, StatusResponse, QueryRequest, RAGAnswer, ConfigRequest, HealthResponse, ConfigResponse
 from app.services import github as github_svc
 from app.services import nodes as nodes_svc
 from app.services import summaries as summaries_svc
@@ -21,11 +23,9 @@ from app.services import content as content_svc
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-import os
 
 from google import genai
 from google.genai.errors import ClientError
-import os
 
 @router.post("/config", response_model=StatusResponse, status_code=status.HTTP_200_OK)
 async def post_config(body: ConfigRequest) -> StatusResponse:
@@ -104,6 +104,64 @@ async def post_repo(body: RepoRequest) -> StatusResponse:
         detail=f"Repository cloned to {repo_path}",
     )
 
+
+def _validate_local_folder(folder_path: str) -> Path:
+    raw = (folder_path or "").strip()
+    raw = raw.strip('"').strip("'")
+    if not raw:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Folder path is required.",
+        )
+    try:
+        folder = Path(raw).expanduser().resolve()
+    except (OSError, RuntimeError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid folder path: {exc}",
+        )
+    if not folder.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Folder does not exist: {folder}",
+        )
+    if not folder.is_dir():
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Path is not a directory: {folder}",
+        )
+    try:
+        if not os.access(folder, os.R_OK):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Folder is not readable: {folder}",
+            )
+        os.listdir(folder)
+    except OSError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Folder could not be accessed: {folder} ({exc})",
+        )
+    out_resolved = state.out_dir.resolve()
+    if folder == out_resolved or out_resolved in folder.parents:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Cannot use RepoLens' output directory as a repository.",
+        )
+    return folder
+
+
+@router.post("/repo/local", response_model=StatusResponse, status_code=status.HTTP_200_OK)
+async def post_repo_local(body: LocalRepoRequest) -> StatusResponse:
+    logger.info("POST /repo/local folder_path=%s", body.folder_path)
+    folder = _validate_local_folder(body.folder_path)
+    state.repo_path = folder
+    logger.info("Local repo registered: %s", folder)
+    return StatusResponse(
+        status="ok",
+        detail=f"Local folder registered: {folder}",
+    )
+
 @router.post("/tree", response_model=StatusResponse, status_code=status.HTTP_200_OK)
 async def post_tree() -> StatusResponse:
     logger.info("POST /tree  repo=%s", state.repo_path)
@@ -155,8 +213,8 @@ async def post_edges() -> StatusResponse:
     )
 
 
-@router.post("/summary", response_model=StatusResponse, status_code=status.HTTP_200_OK)
-async def post_summary() -> StatusResponse:
+@router.post("/summary", status_code=status.HTTP_200_OK)
+async def post_summary():
     logger.info("POST /summary")
     try:
         result = summaries_svc.run_summary_pipeline()
@@ -165,14 +223,16 @@ async def post_summary() -> StatusResponse:
     except Exception as exc:
         logger.exception("Unexpected error in /summary")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
-
-    return StatusResponse(
-        status="ok",
-        detail=(
+    # for the frontend loading bar
+    return {
+        "status": "ok",
+        "detail": (
             f"Summary complete: {result['summarized_nodes']}/{result['total_nodes']} nodes summarized. "
             f"Root summary length: {result['root_summary_length']} chars."
         ),
-    )
+        "summaries_completed": result["summarized_nodes"],
+        "total_nodes": result["total_nodes"],
+    }
 
 @router.post("/query",response_model=StatusResponse,status_code=status.HTTP_200_OK)
 async def user_query(body: QueryRequest) -> StatusResponse:
@@ -222,7 +282,7 @@ async def ask(body: QueryRequest) -> RAGAnswer:
                 
         if not state.repo_path:
             raise RuntimeError("No repository parsed. Call POST /repo first.")
-        return rag_svc.answer_query(body.query)
+        return rag_svc.answer_query(body.query, deep=body.deep)
     except RuntimeError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
     except Exception as exc:
@@ -240,6 +300,11 @@ async def search(query: str):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
 
 
+@router.get("/pipeline/progress", status_code=status.HTTP_200_OK)
+async def get_pipeline_progress():
+    return state.pipeline_progress or {}
+
+
 @router.get("/content/{node_id}", status_code=status.HTTP_200_OK)
 async def get_content(node_id: str):
     logger.info("GET /content/%s", node_id)
@@ -247,6 +312,19 @@ async def get_content(node_id: str):
     if result is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Unknown node id: {node_id}")
     return result
+
+
+@router.get("/get_code", status_code=status.HTTP_200_OK)
+async def get_code(node_id: str):
+    logger.info("GET /get_code node_id=%s", node_id)
+    try:
+        return content_svc.get_node_code(node_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
 
 
 @router.get("/data/{file_name}", status_code=status.HTTP_200_OK)
@@ -259,8 +337,6 @@ async def get_data_file(file_name: str):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{file_name} not found in out directory")
     return FileResponse(path, media_type="application/json")
 
-import json
-
 @router.get("/repos", status_code=status.HTTP_200_OK)
 async def get_repos_list():
     logger.info("GET /repos")
@@ -270,10 +346,53 @@ async def get_repos_list():
             with open(fs_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             name = data.get("name", "Unknown Repository")
-            return {"repos": [{"owner": "local", "name": name, "path": str(state.out_dir)}]}
+            file_count = _count_files(data)
+            summarized = _count_summarized(data)
+            return {"repos": [{
+                "owner": "local",
+                "name": name,
+                "path": str(state.out_dir),
+                "file_count": file_count,
+                "node_count": _count_nodes_from_files(data),
+                "has_summaries": summarized > 0,
+                "summary_count": summarized,
+            }]}
         except Exception:
             pass
     return {"repos": []}
+
+
+def _count_files(node: dict) -> int:
+    count = 0
+    stack = [node]
+    while stack:
+        current = stack.pop()
+        if current.get("type") == "file":
+            count += 1
+        stack.extend(current.get("children") or [])
+    return count
+
+
+def _count_nodes_from_files(node: dict) -> int:
+    count = 0
+    stack = [node]
+    while stack:
+        current = stack.pop()
+        if current.get("type") == "file":
+            count += len(current.get("node_ids") or [])
+        stack.extend(current.get("children") or [])
+    return count
+
+
+def _count_summarized(node: dict) -> int:
+    count = 0
+    stack = [node]
+    while stack:
+        current = stack.pop()
+        if current.get("summary"):
+            count += 1
+        stack.extend(current.get("children") or [])
+    return count
 
 @router.get("/structure", status_code=status.HTTP_200_OK)
 async def get_structure_endpoint():

@@ -10,6 +10,7 @@ class AppState:
     _repo_path: Path | None = None
     out_dir: Path = field(default_factory=lambda: Path("out"))
     raw_nodes: list[dict] = field(default_factory=list)
+    pipeline_progress: dict = field(default_factory=dict)
 
     @property
     def repo_path(self) -> Path | None:

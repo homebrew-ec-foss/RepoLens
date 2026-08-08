@@ -203,7 +203,13 @@ def index_nodes() -> dict:
 
     logger.info("Embedding %d documents one-by-one...", len(documents))
     t1 = time.perf_counter()
-    vectors = embed_texts([doc["text"] for doc in documents])
+    state.pipeline_progress = {"phase": "embedding", "done": 0, "total": len(documents)}
+    vectors = embed_texts(
+        [doc["text"] for doc in documents],
+        on_progress=lambda done, total: state.pipeline_progress.update(
+            {"phase": "embedding", "done": done, "total": total}
+        ),
+    )
     logger.info("Embedded %d vectors in %.2fs", len(vectors), time.perf_counter() - t1)
 
     points: list[qmodels.PointStruct] = []
@@ -218,6 +224,7 @@ def index_nodes() -> dict:
 
     logger.info("Prepared %d points, upserting in batches of %d", len(points), _UPSERT_BATCH_SIZE)
     t2 = time.perf_counter()
+    state.pipeline_progress = {"phase": "upserting", "done": 0, "total": len(points)}
     for start in tqdm(
         range(0, len(points), _UPSERT_BATCH_SIZE),
         desc="Upserting to Qdrant",
@@ -227,6 +234,10 @@ def index_nodes() -> dict:
             collection_name=name,
             points=points[start:start + _UPSERT_BATCH_SIZE],
         )
+        state.pipeline_progress.update(
+            {"phase": "upserting", "done": min(start + _UPSERT_BATCH_SIZE, len(points)), "total": len(points)}
+        )
+    state.pipeline_progress = {"phase": "done", "done": len(points), "total": len(points)}
     logger.info("Upsert complete: %d points in %.2fs", len(points), time.perf_counter() - t2)
 
     logger.info("Indexed %d points into collection %s", len(points), name)

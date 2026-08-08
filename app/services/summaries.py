@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 _MODEL = os.getenv("REPOLENS_SUMMARY_MODEL", "gemini-3.1-flash-lite")
 _BATCH_SIZE = int(os.getenv("REPOLENS_BATCH_SIZE", "1000"))
+_PARENT_BATCH_SIZE = int(os.getenv("REPOLENS_PARENT_BATCH_SIZE", "5"))
 
 _client: genai.Client | None = None
 
@@ -42,6 +44,49 @@ Snippets:
 
 _SNIPPET_BLOCK = "--- id:{id} name:{name} type:{type} ---\n{code}\n"
 
+_PARENT_PROMPT = """\
+You are summarizing a parent node in a software repository.
+
+The following are summaries of the child nodes contained inside this parent.
+
+Based ONLY on these child summaries, write a concise and coherent summary of the parent.
+
+The summary should explain:
+- what this parent contains
+- its overall purpose/responsibility
+- the major functionality represented by its children
+
+Do not simply concatenate or list the child summaries.
+Synthesize them into one meaningful summary.
+
+Keep the summary concise and useful to a developer who wants to understand what this parent contains without opening every child.
+
+Child summaries:
+
+{child_summaries}
+"""
+
+_PARENT_PROMPT_BATCH = """\
+You are summarizing parent nodes in a software repository. Each parent is tagged with a unique id and is followed by the summaries of the child nodes contained inside it.
+
+For each parent, based ONLY on its child summaries, write a concise and coherent summary that explains:
+- what this parent contains
+- its overall purpose/responsibility
+- the major functionality represented by its children
+
+Do not simply concatenate or list the child summaries. Synthesize them into one meaningful summary per parent.
+
+Respond with ONLY a JSON object mapping each parent id to its summary string, and nothing else. Example: {{"id1": "summary", "id2": "summary"}}
+
+Parents:
+{parents}
+"""
+
+_PARENT_BLOCK = """\
+--- id:{id} name:{name} ---
+{child_summaries}
+"""
+
 
 def _read_snippet(path: str, start_line: int, end_line: int) -> str:
     try:
@@ -63,7 +108,6 @@ def _summarize_node_batch(batch: list[dict]) -> dict[str, str]:
     )
     prompt = _NODE_PROMPT.format(count=len(batch), snippets=snippets)
 
-    import time
     client = _get_client()
     for attempt in range(5):
         try:
@@ -101,6 +145,55 @@ def _concat_summaries(summaries: list[str], labels: list[str] | None = None) -> 
     cleaned = [s.strip() for s in summaries if s and s.strip()]
     return "\n".join(cleaned)
 
+
+def _summarize_parent_batch(parents: list[dict]) -> dict[str, str]:
+    if not parents:
+        return {}
+
+    blocks = "\n".join(
+        _PARENT_BLOCK.format(
+            id=p["id"],
+            name=p.get("name") or "unknown",
+            child_summaries=p.get("child_summaries") or "(no child summaries)",
+        )
+        for p in parents
+    )
+    prompt = _PARENT_PROMPT_BATCH.format(parents=blocks)
+
+    client = _get_client()
+    for attempt in range(5):
+        try:
+            response = client.models.generate_content(
+                model=_MODEL,
+                contents=prompt,
+                config=types.GenerateContentConfig(response_mime_type="application/json"),
+            )
+            data = json.loads(response.text)
+            return {str(k): str(v) for k, v in data.items()} if isinstance(data, dict) else {}
+        except Exception as e:
+            if attempt < 4 and ("429" in str(e) or "RESOURCE_EXHAUSTED" in str(e) or "quota" in str(e).lower()):
+                sleep_time = 15 * (attempt + 1)
+                logger.warning(f"Rate limit hit in parent summary. Retrying in {sleep_time}s...")
+                time.sleep(sleep_time)
+            else:
+                if attempt == 4 or isinstance(e, (json.JSONDecodeError, TypeError)):
+                    logger.warning("Failed to parse LLM response for parent batch")
+                    return {}
+    return {}
+
+
+def generate_parent_summary(child_summaries: list[str]) -> str:
+    if not child_summaries:
+        return ""
+    text = "\n".join(s.strip() for s in child_summaries if s and s.strip())
+    if not text:
+        return ""
+    result = _summarize_parent_batch([
+        {"id": "_parent", "name": "", "child_summaries": text},
+    ])
+    return result.get("_parent", "")
+
+
 def _stage1_summarize_nodes(nodes: list[dict]):
     pending = [n for n in nodes if not n.get("summary") and should_summarize_node(n)]
     
@@ -126,63 +219,108 @@ def _stage1_summarize_nodes(nodes: list[dict]):
     
     logger.info("Stage 1 complete: %d node summaries populated", len(all_summaries))
 
-def find_node_summary(node_id):
-    root = Path(__file__).resolve().parent.parent.parent
-    nodes_path = root / "out" / "nodes.json"
-    with open(nodes_path,'r') as f:
-        data = json.load(f)
-        data = data['nodes']
-        for ele in data:
-            if ele['id'] == node_id:
-                return ele['summary']  
-    return None
-def copy_node_summaries_from_node_to_tree(nodes):
-    res = []
-    for node in nodes:
-        data = find_node_summary(node)
-        if data:
-            res.append(data)
-    return res
-    logger.info("Stage 1 complete: %d semantic node summaries populated", len(all_summaries))
 
 def _stage2_file_summaries(structure: dict, node_index: dict[str, dict]) -> None:
-    if structure.get("type") == "file":
-        node_ids: list[str] = structure.get("node_ids", [])
-        summaries = [node_index[nid]["summary"] for nid in node_ids if nid in node_index and node_index[nid].get("summary")]
-        labels = [node_index[nid].get("title") or nid for nid in node_ids if nid in node_index and node_index[nid].get("summary")]
-        structure["summary"] = _concat_summaries(summaries, labels)
+    file_entries: list[dict] = []
 
-        if "type" in structure and structure['type'] == 'file':
-            nodes = structure['node_ids']
-            res = copy_node_summaries_from_node_to_tree(nodes)
-            if res:
-                j = 0
-                for i in range(len(structure['nodes'])):
-                    if j < len(res):
+    def walk(entry: dict) -> None:
+        if entry.get("type") == "file":
+            file_entries.append(entry)
+            return
+        for child in entry.get("children", []):
+            walk(child)
 
-                        structure['nodes'][i]['summary'] = res[j]
-                        j+=1
-
+    walk(structure)
+    if not file_entries:
         return
 
-    for child in structure.get("children", []):
-        _stage2_file_summaries(child, node_index)
+    logger.info(
+        "Stage 2: synthesizing %d file summaries from node summaries (batch=%d)",
+        len(file_entries), _PARENT_BATCH_SIZE,
+    )
+
+    for start in range(0, len(file_entries), _PARENT_BATCH_SIZE):
+        batch = file_entries[start:start + _PARENT_BATCH_SIZE]
+        batch_by_id = {entry["id"]: entry for entry in batch}
+        requests: list[dict] = []
+        for entry in batch:
+            node_ids = entry.get("node_ids", [])
+            summaries = [
+                node_index[nid]["summary"]
+                for nid in node_ids
+                if nid in node_index and node_index[nid].get("summary")
+            ]
+            labels = [
+                node_index[nid].get("title") or nid
+                for nid in node_ids
+                if nid in node_index and node_index[nid].get("summary")
+            ]
+            child_text = _concat_summaries(summaries, labels)
+            if child_text:
+                requests.append({
+                    "id": entry["id"],
+                    "name": entry.get("name"),
+                    "child_summaries": child_text,
+                })
+
+        results = _summarize_parent_batch(requests) if requests else {}
+        for req in requests:
+            entry = batch_by_id.get(req["id"])
+            summary = results.get(req["id"])
+            if entry and summary:
+                entry["summary"] = summary
+
+            for snode in entry.get("nodes", []):
+                nid = snode.get("id")
+                if nid in node_index:
+                    snode["summary"] = node_index[nid].get("summary") or ""
 
 
-def _stage3_folder_summaries(entry: dict) -> str:
-    if entry.get("type") == "file":
-        return entry.get("summary", "")
+def _stage3_folder_summaries(structure: dict) -> None:
+    entries_by_depth: list[tuple[int, dict]] = []
 
-    child_summaries = []
-    child_labels = []
-    for child in entry.get("children", []):
-        child_summary = _stage3_folder_summaries(child)
-        if child_summary and child_summary.strip():
-            child_summaries.append(child_summary)
-            child_labels.append(child["name"])
+    def walk(entry: dict, depth: int) -> None:
+        if entry.get("type") != "file":
+            entries_by_depth.append((depth, entry))
+        for child in entry.get("children", []):
+            walk(child, depth + 1)
 
-    entry["summary"] = _concat_summaries(child_summaries, child_labels)
-    return entry["summary"]
+    walk(structure, 0)
+    entries_by_depth.sort(key=lambda t: t[0], reverse=True)
+    parents = [entry for _, entry in entries_by_depth]
+
+    logger.info(
+        "Stage 3: synthesizing %d folder/repository summaries (batch=%d)",
+        len(parents), _PARENT_BATCH_SIZE,
+    )
+
+    for start in range(0, len(parents), _PARENT_BATCH_SIZE):
+        batch = parents[start:start + _PARENT_BATCH_SIZE]
+        batch_by_id = {entry["id"]: entry for entry in batch}
+        requests: list[dict] = []
+        for entry in batch:
+            child_summaries: list[str] = []
+            child_labels: list[str] = []
+            for child in entry.get("children", []):
+                child_summary = child.get("summary", "")
+                if child_summary and child_summary.strip():
+                    child_summaries.append(child_summary)
+                    child_labels.append(child.get("name", ""))
+            child_text = _concat_summaries(child_summaries, child_labels)
+            if child_text:
+                requests.append({
+                    "id": entry["id"],
+                    "name": entry.get("name"),
+                    "child_summaries": child_text,
+                })
+
+        results = _summarize_parent_batch(requests) if requests else {}
+        for req in requests:
+            entry = batch_by_id.get(req["id"])
+            summary = results.get(req["id"])
+            if entry and summary:
+                entry["summary"] = summary
+
 
 def run_summary_pipeline() -> dict:
     nodes_path = (state.out_dir / "nodes.json").resolve()
@@ -200,11 +338,11 @@ def run_summary_pipeline() -> dict:
     _stage1_summarize_nodes(nodes)
     nodes_path.write_text(json.dumps({"nodes": nodes}, indent=2), encoding="utf-8")
 
-    logger.info("Summary Stage 2: Concatenating file summaries (no LLM)")
+    logger.info("Summary Stage 2: LLM file summaries (batched)")
     node_index = {n["id"]: n for n in nodes}
     _stage2_file_summaries(structure, node_index)
 
-    logger.info("Summary Stage 3: Concatenating folder/repository summaries (no LLM)")
+    logger.info("Summary Stage 3: LLM folder/repository summaries (batched)")
     _stage3_folder_summaries(structure)
 
     structure_path.write_text(json.dumps(structure, indent=2), encoding="utf-8")

@@ -29,13 +29,15 @@ def _get_model() -> SentenceTransformer:
     return _model
 
 
-def embed_texts(texts: list[str]) -> list[list[float]]:
+def embed_texts(texts: list[str], on_progress=None) -> list[list[float]]:
     if not texts:
         return []
     model = _get_model()
     vectors: list[list[float]] = []
-    for text in tqdm(texts, desc="Embedding documents", unit="doc"):
+    for i, text in enumerate(tqdm(texts, desc="Embedding documents", unit="doc")):
         vectors.append(model.encode(text).tolist())
+        if on_progress is not None:
+            on_progress(i + 1, len(texts))
     return vectors
 
 

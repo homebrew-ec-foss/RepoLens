@@ -1,13 +1,12 @@
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   RepoLens — Application Logic
-   Single-page application with hash-based routing.
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-
-// ─── Constants ──────────────────────────────────────────────────
 
 const Icons = {
   folder: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>`,
   file: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`,
+  func: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 4-4-4-4"/><path d="m8 8-4 4 4 4"/><path d="M14 4l-4 16"/></svg>`,
+  itf: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 4.5-9 4.5-9-4.5Z"/><path d="m3 12 9 4.5 9-4.5"/><path d="m3 16.5 9 4.5 9-4.5"/></svg>`,
+  generic: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="1"/></svg>`,
+  arrowDown: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>`,
+  send: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>`,
   cloud: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>`,
   settings: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>`,
   repo: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>`,
@@ -21,8 +20,93 @@ chevronLeft: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" vie
   copy: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`,
   info: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>`,
   check: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`,
-  x: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>`
+  x: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>`,
+  menu: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg>`,
+  braces: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/></svg>`,
 };
+
+const LANG_BADGES = {
+  py: { ab: 'PY', bg: '#3776ab' },
+  python: { ab: 'PY', bg: '#3776ab' },
+  ipynb: { ab: 'NB', bg: '#f37726' },
+  js: { ab: 'JS', bg: '#e8b33a' },
+  mjs: { ab: 'JS', bg: '#e8b33a' },
+  cjs: { ab: 'JS', bg: '#e8b33a' },
+  jsx: { ab: 'JSX', bg: '#61dafb' },
+  ts: { ab: 'TS', bg: '#3178c6' },
+  tsx: { ab: 'TSX', bg: '#3178c6' },
+  html: { ab: 'H5', bg: '#e34f26' },
+  htm: { ab: 'H5', bg: '#e34f26' },
+  css: { ab: 'CSS', bg: '#264de4' },
+  scss: { ab: 'SCSS', bg: '#cd6799' },
+  sass: { ab: 'SCSS', bg: '#cd6799' },
+  less: { ab: 'LESS', bg: '#4f9fd8' },
+  json: { ab: '{}', bg: '#5a6478' },
+  md: { ab: 'MD', bg: '#75858f' },
+  markdown: { ab: 'MD', bg: '#75858f' },
+  go: { ab: 'GO', bg: '#00add8' },
+  rs: { ab: 'RS', bg: '#dea584' },
+  java: { ab: 'JV', bg: '#ea2d2e' },
+  c: { ab: 'C', bg: '#5c6bc0' },
+  h: { ab: 'H', bg: '#5c6bc0' },
+  cpp: { ab: 'C++', bg: '#5c6bc0' },
+  hpp: { ab: 'C++', bg: '#5c6bc0' },
+  cc: { ab: 'C++', bg: '#5c6bc0' },
+  cs: { ab: 'C#', bg: '#68217a' },
+  php: { ab: 'PHP', bg: '#777bb4' },
+  rb: { ab: 'RB', bg: '#cc342e' },
+  sh: { ab: 'SH', bg: '#4eaa25' },
+  bash: { ab: 'SH', bg: '#4eaa25' },
+  zsh: { ab: 'SH', bg: '#4eaa25' },
+  ps1: { ab: 'PS', bg: '#0078d4' },
+  bat: { ab: 'CMD', bg: '#4d5a65' },
+  cmd: { ab: 'CMD', bg: '#4d5a65' },
+  sql: { ab: 'SQL', bg: '#e38c00' },
+  yml: { ab: 'YML', bg: '#1e8ab8' },
+  yaml: { ab: 'YAML', bg: '#1e8ab8' },
+  toml: { ab: 'TOML', bg: '#5a6478' },
+  txt: { ab: 'TXT', bg: '#8a94a6' },
+  log: { ab: 'LOG', bg: '#8a94a6' },
+  lock: { ab: 'LOCK', bg: '#8a94a6' },
+  makefile: { ab: 'MK', bg: '#e0115f' },
+  dockerfile: { ab: 'DK', bg: '#2496ed' },
+  gitignore: { ab: 'GIT', bg: '#f05133' },
+  env: { ab: '.ENV', bg: '#7c8a99' },
+  vue: { ab: 'VU', bg: '#42b883' },
+  swift: { ab: 'SW', bg: '#fa7343' },
+  kt: { ab: 'KT', bg: '#a97bff' },
+  kotlin: { ab: 'KT', bg: '#a97bff' },
+  dart: { ab: 'DA', bg: '#00b4ab' },
+  lua: { ab: 'LU', bg: '#2c2d72' },
+  perl: { ab: 'PL', bg: '#9b6bd' },
+  r: { ab: 'R', bg: '#276dc3' },
+  jl: { ab: 'JL', bg: '#a33332' },
+  ex: { ab: 'EL', bg: '#6e4a7e' },
+  exs: { ab: 'EL', bg: '#6e4a7e' },
+  scala: { ab: 'SC', bg: '#dc322f' },
+  gradle: { ab: 'GD', bg: '#45b15a' },
+  xml: { ab: 'XML', bg: '#e31a1c' },
+  graphql: { ab: 'GQL', bg: '#e10098' },
+  proto: { ab: 'PROTO', bg: '#6b3fb' },
+  pdf: { ab: 'PDF', bg: '#d93025' },
+  png: { ab: 'IMG', bg: '#8a94a6' },
+  jpg: { ab: 'IMG', bg: '#8a94a6' },
+  jpeg: { ab: 'IMG', bg: '#8a94a6' },
+  gif: { ab: 'IMG', bg: '#8a94a6' },
+  svg: { ab: 'IMG', bg: '#8a94a6' },
+  ico: { ab: 'IMG', bg: '#8a94a6' },
+  webp: { ab: 'IMG', bg: '#8a94a6' },
+};
+
+function getFileIcon(name) {
+  const lower = (name || '').toLowerCase();
+  const special = lower === 'makefile' ? 'makefile' : lower === 'dockerfile' ? 'dockerfile' : lower === '.gitignore' ? 'gitignore' : (lower === '.env' || lower.endsWith('.env')) ? 'env' : null;
+  const key = special || (name.includes('.') ? name.split('.').pop().toLowerCase() : '');
+  const m = LANG_BADGES[key];
+  if (!m) return Icons.file;
+  const size = m.ab.length <= 2 ? 5.2 : m.ab.length <= 3 ? 4.6 : 3.6;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="14" rx="3" fill="${m.bg}"/><text x="8" y="10.6" font-family="Segoe UI, Arial, sans-serif" font-size="${size}" font-weight="700" fill="#ffffff" text-anchor="middle">${m.ab}</text></svg>`;
+}
 
 const API = '';  // Same origin
 const $ = (sel, ctx = document) => ctx.querySelector(sel);
@@ -57,10 +141,13 @@ const state = {
   pipelineStage: -1,
   pipelineError: null,
   searchOpen: false,
+  codePanel: null,
   modalOpen: null,
   expandedNodes: new Set(),
 selectedId: null,
   explorerSearch: '',
+  chatSending: false,
+  deepThink: false,
 };
 
 // ─── API Layer ──────────────────────────────────────────────────
@@ -133,6 +220,8 @@ case 'graph': app.appendChild(renderLayout('graph')); break;
   }
 
   if (state.searchOpen) app.appendChild(renderSearch());
+  if (state.modalOpen === 'addRepo') app.appendChild(renderAddRepoModal());
+  if (state.codePanel) app.appendChild(renderCodePanel());
 }
 
 // ─── Splash ─────────────────────────────────────────────────────
@@ -161,7 +250,6 @@ function renderSplash() {
   }
   splash.appendChild(nodesContainer);
 
-  splash.appendChild(el('img', { class: 'splash-logo', src: '/static/lens_image.png', alt: 'RepoLens' }));
   splash.appendChild(el('div', { class: 'splash-title' }, 'RepoLens'));
   splash.appendChild(el('div', { class: 'splash-subtitle' }, 'Optical Repository Analyzer'));
 
@@ -199,7 +287,6 @@ function renderSetup() {
   inner.appendChild(steps);
 
   const header = el('div', { class: 'setup-header' });
-  header.appendChild(el('img', { src: '/static/lens_image.png', alt: 'RepoLens' }));
   header.appendChild(el('h1', {}, 'Welcome to RepoLens'));
   header.appendChild(el('p', {}, 'Choose how you want to power your AI analysis'));
   inner.appendChild(header);
@@ -384,20 +471,18 @@ function renderSidebar(activeView) {
 
   // Header
   const header = el('div', { class: 'sidebar-header' });
-  const logo = el('img', { src: '/static/lens_image.png', alt: 'RepoLens' });
   const title = el('span', { class: 'sidebar-header-title' }, 'RepoLens');
   
   const toggleBtn = el('button', { 
       class: 'btn-icon', 
-      style: { background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px', marginLeft: 'auto' },
-      html: Icons.menu || '☰'
+      style: { background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px', marginLeft: 'auto', display: 'flex', alignItems: 'center' },
+      html: Icons.menu
   });
   toggleBtn.onclick = () => {
       state.sidebarCollapsed = !state.sidebarCollapsed;
       sidebar.classList.toggle('collapsed', state.sidebarCollapsed);
   };
 
-  header.appendChild(logo);
   header.appendChild(title);
   header.appendChild(toggleBtn);
   sidebar.appendChild(header);
@@ -548,11 +633,6 @@ function renderHome() {
     repoSection.appendChild(list);
   }
   home.appendChild(repoSection);
-
-  // Append modal if open
-  if (state.modalOpen === 'addRepo') {
-    home.appendChild(renderAddRepoModal());
-  }
 
   return home;
 }
@@ -756,7 +836,8 @@ function renderLocalTab() {
 const PIPELINE_STAGES = [
   { id: 'parse', label: 'Parsing Codebase' },
   { id: 'summary', label: 'Generating AI Summaries' },
-  { id: 'index', label: 'Building Vector Index' }
+  { id: 'embeddings', label: 'Generating Embeddings' },
+  { id: 'index', label: 'Indexing Vectors' }
 ];
 
 let pipelineStartTime = null;
@@ -798,13 +879,42 @@ async function startPipeline() {
     
     pipelineData.stage_index = 1; pipelineData.stage = 'summary'; updatePipeline(pipelineData);
     log('Generating AI Summaries...');
-    await api('/summary', { method: 'POST' });
+    const summaryRes = await api('/summary', { method: 'POST' });
+    pipelineData.summaries_completed = summaryRes.summaries_completed ?? 0;
     
-    pipelineData.stage_index = 2; pipelineData.stage = 'index'; updatePipeline(pipelineData);
-    log('Building Vector Index...');
-    await api('/index', { method: 'POST' });
-    
-    pipelineData.stage_index = 3; pipelineData.stage = 'done'; updatePipeline(pipelineData);
+    pipelineData.stage_index = 2; pipelineData.stage = 'embeddings'; updatePipeline(pipelineData);
+    log('Generating Embeddings...');
+
+    let embedPoller = null;
+    try {
+      const indexPromise = api('/index', { method: 'POST' });
+
+      embedPoller = setInterval(async () => {
+        try {
+          const p = await api('/pipeline/progress');
+          if (p && p.total > 0) {
+            const pct = Math.min(100, Math.round((p.done / p.total) * 100));
+            pipelineData.embedPct = pct;
+            pipelineData.embedDetail = `${p.done}/${p.total}`;
+            updatePipeline(pipelineData);
+          }
+        } catch (e) { /* transient — ignore while index is running */ }
+      }, 700);
+
+      await indexPromise;
+      clearInterval(embedPoller);
+      embedPoller = null;
+      pipelineData.embedPct = 100;
+      pipelineData.embedDetail = `${pipelineData.embedDetail || 'done'}`;
+      updatePipeline(pipelineData);
+    } finally {
+      if (embedPoller) { clearInterval(embedPoller); embedPoller = null; }
+    }
+
+    pipelineData.stage_index = 3; pipelineData.stage = 'index'; updatePipeline(pipelineData);
+    log('Indexing Vectors...');
+
+    pipelineData.stage_index = 4; pipelineData.stage = 'done'; updatePipeline(pipelineData);
     log('Pipeline completed successfully!');
     
     clearInterval(pipelinePoller);
@@ -815,6 +925,11 @@ async function startPipeline() {
       state.nodes = await api('/data/nodes.json');
       state.edges = await api('/data/edges.json');
       await loadRepos();
+
+      const summaryStats = countSummaries(state.structure);
+      pipelineData.nodes_discovered = summaryStats.nodes;
+      pipelineData.files_processed = summaryStats.files;
+      if (pipelineData.summaries_completed === 0) pipelineData.summaries_completed = summaryStats.summarized;
     } catch(e) {
       console.error("Failed to load parsed data", e);
     }
@@ -913,16 +1028,27 @@ function renderPipeline() {
   nodeGroup.appendChild(nodeBar);
   progressBars.appendChild(nodeGroup);
 
-  // 3. Summaries & Index Bar
+  // 3. Summaries Bar
   const sumGroup = el('div', { class: 'pl-progress-group' });
   const sumHeader = el('div', { class: 'pl-progress-header' });
-  sumHeader.appendChild(el('span', {}, 'Summaries & Indexing'));
+  sumHeader.appendChild(el('span', {}, 'Summaries'));
   sumHeader.appendChild(el('span', { id: 'pb-sum-pct' }, '0%'));
   sumGroup.appendChild(sumHeader);
   const sumBar = el('div', { class: 'pl-progress-track' });
   sumBar.appendChild(el('div', { class: 'pl-progress-fill pl-progress-fill-accent', id: 'pb-sum-fill', style: { width: '0%', transition: 'width 0.3s ease' } }));
   sumGroup.appendChild(sumBar);
   progressBars.appendChild(sumGroup);
+
+  // 4. Embeddings Bar
+  const embedGroup = el('div', { class: 'pl-progress-group' });
+  const embedHeader = el('div', { class: 'pl-progress-header' });
+  embedHeader.appendChild(el('span', {}, 'Embeddings'));
+  embedHeader.appendChild(el('span', { id: 'pb-embed-pct' }, '0%'));
+  embedGroup.appendChild(embedHeader);
+  const embedBar = el('div', { class: 'pl-progress-track' });
+  embedBar.appendChild(el('div', { class: 'pl-progress-fill pl-progress-fill-accent', id: 'pb-embed-fill', style: { width: '0%', transition: 'width 0.3s ease' } }));
+  embedGroup.appendChild(embedBar);
+  progressBars.appendChild(embedGroup);
 
   right.appendChild(progressBars);
 
@@ -963,8 +1089,9 @@ function updatePipeline(d) {
 
     stageEl.className = `pl-stage ${cls}`;
     if (cls === 'completed') dot.innerHTML = Icons.check; else dot.innerHTML = '';
-    if (cls === 'active') sub.textContent = 'processing...';
-    else if (cls === 'completed') sub.textContent = 'done';
+    if (cls === 'active') {
+      sub.textContent = (i === 2 && d.embedPct != null) ? `${d.embedPct}%` : 'processing...';
+    } else if (cls === 'completed') sub.textContent = 'done';
     else sub.textContent = '';
   }
 
@@ -988,6 +1115,11 @@ function updatePipeline(d) {
   const pbSumPct = document.getElementById('pb-sum-pct');
   const pbSumFill = document.getElementById('pb-sum-fill');
   if (pbSumPct && pbSumFill) { pbSumPct.textContent = `${sumPct}%`; pbSumFill.style.width = `${sumPct}%`; }
+
+  const embedPct = d.embedPct != null ? Math.min(100, d.embedPct) : (stageIndex > 3 ? 100 : 0);
+  const pbEmbedPct = document.getElementById('pb-embed-pct');
+  const pbEmbedFill = document.getElementById('pb-embed-fill');
+  if (pbEmbedPct && pbEmbedFill) { pbEmbedPct.textContent = `${embedPct}%`; pbEmbedFill.style.width = `${embedPct}%`; }
 }
 
 // ─── Completion ─────────────────────────────────────────────────
@@ -1034,6 +1166,20 @@ function countFiles(node) {
   return count;
 }
 
+function countSummaries(node) {
+  const out = { files: 0, nodes: 0, summarized: 0 };
+  const stack = [node];
+  while (stack.length) {
+    const cur = stack.pop();
+    if (!cur) continue;
+    if (cur.type === 'file') out.files += 1;
+    out.nodes += (cur.node_ids || []).length;
+    if (cur.summary) out.summarized += 1;
+    for (const c of (cur.children || [])) stack.push(c);
+  }
+  return out;
+}
+
 // ─── Explorer ───────────────────────────────────────────────────
 function renderExplorer() {
   const explorer = el('div', { class: 'explorer content-centered' });
@@ -1043,34 +1189,18 @@ function renderExplorer() {
     return explorer;
   }
 
-  // Search
-  const searchDiv = el('div', { class: 'explorer-search' });
-  searchDiv.appendChild(el('span', { class: 'explorer-search-icon', html: Icons.search }));
-  const searchInput = el('input', {
-    class: 'input',
-    placeholder: 'Search summaries...',
-    style: { paddingLeft: '32px' },
-    value: state.explorerSearch,
-  });
-  searchInput.addEventListener('input', (e) => {
-    state.explorerSearch = e.target.value;
-    renderTreeInto(treeContainer, state.structure, state.explorerSearch);
-  });
-  searchDiv.appendChild(searchInput);
-  explorer.appendChild(searchDiv);
-
   // Actions
   const actionsBar = el('div', { class: 'flex-between mb-4' });
-  actionsBar.appendChild(el('span', { class: 'text-sm text-secondary' }, `${countFiles(state.structure)} files · ${state.nodes?.nodes?.length || 0} nodes`));
+  actionsBar.appendChild(el('span', { class: 'text-sm text-secondary' }, `${countFiles(state.structure)} files · ${countSummaries(state.structure).nodes} nodes`));
   const btns = el('div', { class: 'flex-center gap-2' });
-  btns.appendChild(el('button', { class: 'btn btn-ghost', onClick: () => { state.expandedNodes.clear(); renderTreeInto(treeContainer, state.structure, state.explorerSearch); } }, 'Collapse All'));
+  btns.appendChild(el('button', { class: 'btn btn-ghost', onClick: () => { state.expandedNodes.clear(); renderTreeInto(treeContainer, state.structure); } }, 'Collapse All'));
   btns.appendChild(el('button', { class: 'btn btn-ghost', onClick: () => expandAll(state.structure) }, 'Expand All'));
   actionsBar.appendChild(btns);
   explorer.appendChild(actionsBar);
 
   // Tree
   const treeContainer = el('div', { id: 'tree-container' });
-  renderTreeInto(treeContainer, state.structure, state.explorerSearch);
+  renderTreeInto(treeContainer, state.structure);
   explorer.appendChild(treeContainer);
 
   return explorer;
@@ -1097,7 +1227,7 @@ function renderTreeNode(node, depth, search) {
   const isExpanded = state.expandedNodes.has(node.id);
   const hasChildren = (node.children && node.children.length > 0);
   const isFile = node.type === 'file';
-  const icon = node.type === 'repository' ? Icons.repo : node.type === 'folder' ? Icons.folder : Icons.file;
+  const icon = node.type === 'repository' ? Icons.repo : node.type === 'folder' ? Icons.folder : getFileIcon(node.name);
 
   const isSelected = state.selectedId === node.id;
 const item = el('div', { class: `tree-item ${isSelected ? 'selected' : ''}`, onClick: () => toggleNode(node.id) });
@@ -1120,11 +1250,11 @@ const item = el('div', { class: `tree-item ${isSelected ? 'selected' : ''}`, onC
   }
 
   const meta = el('div', { class: 'tree-item-meta' });
-  if (node.type === 'file' && node.node_ids) {
+  if (node.type === 'file' && node.node_ids && node.node_ids.length > 0) {
     meta.appendChild(el('span', { class: 'badge badge-default' }, `${node.node_ids.length} nodes`));
   }
   if (node.children?.length) {
-    meta.appendChild(el('span', { class: 'badge badge-default' }, `${node.children.length} items`));
+    meta.appendChild(el('span', { class: 'badge badge-default' }, `${node.children.length} folders`));
   }
   content.appendChild(meta);
   item.appendChild(content);
@@ -1148,13 +1278,10 @@ const item = el('div', { class: `tree-item ${isSelected ? 'selected' : ''}`, onC
       summaryItem.appendChild(si);
       
       if (isSummaryExpanded) {
-        const detail = el('div', { class: 'summary-detail', style: { paddingLeft: '32px' } });
-        const textContainer = el('div', { class: 'summary-detail-text', style: { whiteSpace: 'pre-wrap', lineHeight: '1.6', marginBottom: '8px' } });
+        const detail = el('div', { class: 'summary-detail' });
+        const textContainer = el('div', { class: 'summary-detail-text' });
         textContainer.textContent = node.summary;
         detail.appendChild(textContainer);
-        const detailActions = el('div', { class: 'summary-detail-actions' });
-        detailActions.appendChild(el('button', { class: 'btn btn-ghost', onClick: (e) => { e.stopPropagation(); copyText(node.summary); }, html: Icons.copy + '<span>Copy</span>' }));
-        detail.appendChild(detailActions);
         summaryItem.appendChild(detail);
       }
       frag.appendChild(summaryItem);
@@ -1206,7 +1333,6 @@ function renderChat() {
 
   if (state.chatMessages.length === 0) {
     const empty = el('div', { class: 'chat-empty' });
-    empty.appendChild(el('img', { src: '/static/lens_image.png', alt: '' }));
     empty.appendChild(el('h3', {}, 'Ask about your code'));
     empty.appendChild(el('p', {}, `Query ${state.activeRepo.name} using natural language. Ask about functions, architecture, or how things work.`));
 
@@ -1230,6 +1356,20 @@ function renderChat() {
 
   // Input
   const inputArea = el('div', { class: 'chat-input-area' });
+
+  const toolbar = el('div', { class: 'chat-toolbar' });
+  toolbar.appendChild(el('button', {
+    class: 'deep-think-toggle' + (state.deepThink ? ' active' : ''),
+    type: 'button',
+    'aria-pressed': state.deepThink ? 'true' : 'false',
+    title: 'Include raw source code of the top retrieved nodes for a more grounded answer',
+    onClick: () => { state.deepThink = !state.deepThink; render(); },
+  },
+    el('span', { class: 'deep-think-dot' }),
+    el('span', {}, 'Deep Think'),
+  ));
+  inputArea.appendChild(toolbar);
+
   const inputContainer = el('div', { class: 'chat-input-container' });
 
   const textarea = el('textarea', {
@@ -1253,8 +1393,20 @@ function renderChat() {
   const sendBtn = el('button', {
     class: 'chat-send-btn',
     id: 'chat-send-btn',
+    type: 'button',
+    title: 'Send',
+    'aria-label': 'Send',
+    html: Icons.send,
     onClick: () => sendChat(textarea.value.trim()),
-  }, '↑');
+  });
+  const updateSend = () => {
+    const loading = !!state.chatSending;
+    sendBtn.disabled = !textarea.value.trim() || loading;
+    sendBtn.classList.toggle('loading', loading);
+    sendBtn.innerHTML = loading ? '<span class="spinner"></span>' : Icons.send;
+  };
+  updateSend();
+  textarea.addEventListener('input', updateSend);
 
   inputContainer.appendChild(textarea);
   inputContainer.appendChild(sendBtn);
@@ -1274,38 +1426,72 @@ function renderChatMessage(msg) {
   const wrapper = el('div', { class: `chat-message chat-message-${msg.role}` });
   const bubble = el('div', { class: 'chat-bubble' });
 
-  // Simple markdown-ish rendering
-  bubble.innerHTML = formatChatContent(msg.content);
+  const refs = msg.references || [];
+  const refsById = {};
+  for (const ref of refs) {
+    if (ref && ref.id) refsById[ref.id] = ref;
+  }
 
-  if (msg.references && msg.references.length > 0) {
-    const refs = el('div', { class: 'chat-references' });
-    for (const ref of msg.references) {
+  // Simple markdown-ish rendering with clickable node citations
+  bubble.innerHTML = formatChatContent(msg.content, refsById);
+  for (const cit of $$('.chat-citation', bubble)) {
+    cit.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openNodeRef(refsById[cit.dataset.nodeId] || { id: cit.dataset.nodeId });
+    });
+  }
+
+  if (refs.length > 0) {
+    const refsEl = el('div', { class: 'chat-references' });
+    for (const ref of refs) {
       const pathParts = (ref.path || '').replace(/\\/g, '/').split('/');
       const filename = pathParts.pop() || ref.title;
-      refs.appendChild(el('span', {
+      refsEl.appendChild(el('span', {
         class: 'chat-reference',
         title: ref.path,
+        onClick: () => openNodeRef(ref),
       }, `${ref.title || filename}:${ref.start_line || ''}`));
     }
-    bubble.appendChild(refs);
+    bubble.appendChild(refsEl);
   }
 
   wrapper.appendChild(bubble);
   return wrapper;
 }
 
-function formatChatContent(text) {
+function formatChatContent(text, refsById) {
   if (!text) return '';
-  return text
+  let escaped = text
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\[([A-Za-z0-9_-]+)\]/g, (m, id) => {
+      if (refsById && refsById[id]) {
+        return `<span class="chat-citation" data-node-id="${id}" title="View node ${id}">${id}</span>`;
+      }
+      return m;
+    });
+  return escaped
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     .replace(/^---$/gm, '<hr>')
     .replace(/\n/g, '<br>');
 }
 
+function openNodeRef(ref) {
+  if (!ref || !ref.id) return;
+  openCodePanel({
+    id: ref.id,
+    title: ref.title || ref.id,
+    node_type: ref.node_type || ref.kind || 'node',
+    path: ref.path || '',
+    language: ref.language || '',
+    start_line: ref.start_line || 1,
+    end_line: ref.end_line != null ? ref.end_line : (ref.start_line || 1),
+  });
+}
+
 async function sendChat(query) {
   if (!query || !state.activeRepo) return;
+  state.chatSending = true;
 
   const textarea = document.getElementById('chat-input');
   if (textarea) { textarea.value = ''; textarea.style.height = 'auto'; }
@@ -1336,6 +1522,7 @@ async function sendChat(query) {
         query,
         repo_owner: state.activeRepo.owner,
         repo_name: state.activeRepo.name,
+        deep: !!state.deepThink,
       },
     });
 
@@ -1349,6 +1536,7 @@ async function sendChat(query) {
     toast(err.message, 'error');
   }
 
+  state.chatSending = false;
   render();
 }
 
@@ -1406,10 +1594,51 @@ function makeSettingsRow(label, desc, rightEl) {
 }
 
 // ─── Global Search ──────────────────────────────────────────────
+// ─── Spotlight Search & Code Navigation ─────────────────────────
+function displayPath(p) {
+  if (!p) return '';
+  const norm = (s) => String(s || '').replace(/\\/g, '/').replace(/\/+$/, '');
+  const p2 = norm(p);
+  for (const base of [state.activeRepo && state.activeRepo.path, state.structure && state.structure.path]) {
+    if (base) {
+      const b = norm(base);
+      if (b && p2.startsWith(b + '/')) return p2.slice(b.length + 1);
+    }
+  }
+  const m = p2.match(/\/out\/repo\/[^/]+\/[^/]+\/(.+)$/);
+  if (m) return m[1];
+  return p2;
+}
+
+function displayNodeTypeLabel(nodeType) {
+  const t = (nodeType || '');
+  return t.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function getNodeTypeMeta(nodeType) {
+  const t = (nodeType || '').toLowerCase();
+  if (/(function_definition|function_declaration|method_definition|method_declaration|arrow_function|generator_function|^function$|^method$)/.test(t)) {
+    return { icon: Icons.func, label: 'Function' };
+  }
+  if (/(class_definition|class_declaration|class_specifier|^class$)/.test(t)) {
+    return { icon: Icons.braces, label: 'Class' };
+  }
+  if (/(interface_declaration|^interface$|protocol_declaration|trait|type_alias|typedef|row type)/.test(t)) {
+    return { icon: Icons.itf, label: 'Interface' };
+  }
+  if (/(^file$|^module$|^repository$)/.test(t)) {
+    return { icon: Icons.file, label: 'File' };
+  }
+  if (/(import_statement|import_from|import_declaration|using_directive|preproc_include|use_declaration)/.test(t)) {
+    return { icon: Icons.arrowDown, label: 'Import' };
+  }
+  return { icon: Icons.generic, label: displayNodeTypeLabel(nodeType) };
+}
+
 function renderSearch() {
   const overlay = el('div', {
     class: 'search-overlay',
-    onClick: (e) => { if (e.target === overlay) { state.searchOpen = false; render(); } },
+    onClick: (e) => { if (e.target === overlay) closeSearch(); },
   });
 
   const modal = el('div', { class: 'search-modal' });
@@ -1417,9 +1646,10 @@ function renderSearch() {
   const wrapper = el('div', { class: 'search-input-wrapper' });
   wrapper.appendChild(el('span', { class: 'search-icon', html: Icons.search }));
   const input = el('input', {
-    placeholder: 'Search repositories, summaries, settings...',
+    placeholder: 'Search functions, classes, files…  (f: / c: filters)',
     id: 'global-search-input',
     autocomplete: 'off',
+    spellcheck: 'false',
   });
   wrapper.appendChild(input);
   wrapper.appendChild(el('kbd', {}, 'ESC'));
@@ -1427,88 +1657,134 @@ function renderSearch() {
 
   const results = el('div', { class: 'search-results', id: 'search-results' });
 
-  // Default results
-  const defaults = [
-    { icon: Icons.home, text: 'Home', hint: 'Dashboard', action: () => { state.searchOpen = false; navigate('home'); } },
-    { icon: Icons.plus, text: 'Add Repository', hint: 'GitHub or local', action: () => { state.searchOpen = false; openAddRepoModal(); navigate('home'); } },
-    { icon: Icons.settings, text: 'Settings', hint: 'Configuration', action: () => { state.searchOpen = false; navigate('settings'); } },
-  ];
+  const commands = buildSearchCommands();
+  let items = [];          // { kind: 'command'|'node', ... }
+  let selectedIndex = -1;
+  const MAX_VISIBLE = 10;
 
-  if (state.activeRepo) {
-    defaults.push(
-      { icon: Icons.search, text: 'Summaries', hint: state.activeRepo.name, action: () => { state.searchOpen = false; navigate('explorer'); } },
-      { icon: Icons.chat, text: 'Chat', hint: state.activeRepo.name, action: () => { state.searchOpen = false; navigate('chat'); } },
-    );
-  }
-
-  for (const r of state.repos) {
-    defaults.push({ icon: Icons.repo, text: `${r.owner}/${r.name}`, hint: 'Repository', action: () => { state.searchOpen = false; openRepo(r); } });
-  }
-
-  function renderResults(items) {
+  function renderRows() {
     results.innerHTML = '';
     if (items.length === 0) {
+      selectedIndex = -1;
       results.appendChild(el('div', { class: 'search-empty' }, 'No results found'));
       return;
     }
-    for (const item of items) {
-      results.appendChild(el('div', {
-        class: 'search-result',
-        onClick: item.action,
-      },
-        el('span', { class: 'search-result-icon', html: item.icon }),
-        el('span', { class: 'search-result-text' }, item.text),
-        el('span', { class: 'search-result-hint' }, item.hint),
-      ));
+    items.slice(0, MAX_VISIBLE).forEach((item, i) => {
+      if (item.kind === 'command') {
+        results.appendChild(el('div', {
+          class: 'search-result' + (i === selectedIndex ? ' selected' : ''),
+          onClick: () => executeCommand(item),
+          onMouseEnter: () => { selectedIndex = i; highlightSelection(); },
+        },
+          el('span', { class: 'search-result-icon', html: item.icon }),
+          el('span', { class: 'search-result-text' }, item.text),
+          el('span', { class: 'search-result-hint' }, item.hint),
+        ));
+      } else {
+        const meta = getNodeTypeMeta(item.node.node_type);
+        const lines = (item.node.start_line != null && item.node.end_line != null)
+          ? `Lines ${item.node.start_line}–${item.node.end_line}` : '';
+        results.appendChild(el('div', {
+          class: 'search-result search-result-node' + (i === selectedIndex ? ' selected' : ''),
+          onClick: () => openNode(item.node),
+          onMouseEnter: () => { selectedIndex = i; highlightSelection(); },
+        },
+          el('span', { class: 'search-result-icon', html: meta.icon }),
+          el('span', { class: 'search-result-main' },
+            el('span', { class: 'search-result-name', title: item.node.title }, item.node.title || item.node.id),
+            el('span', { class: 'search-result-path' },
+              displayPath(item.node.path),
+              lines ? el('span', { class: 'search-result-lines' }, ` · ${lines}`) : null,
+            ),
+          ),
+          el('span', { class: 'search-result-badge' }, meta.label),
+        ));
+      }
+    });
+    if (items.length > MAX_VISIBLE) {
+      results.appendChild(el('div', { class: 'search-result-more' }, `+${items.length - MAX_VISIBLE} more`));
     }
   }
 
-  renderResults(defaults);
+  function highlightSelection() {
+    const rows = $$('.search-result', results);
+    rows.forEach((r, i) => r.classList.toggle('selected', i === selectedIndex));
+  }
+
+  function selectRelative(delta) {
+    if (items.length === 0) return;
+    selectedIndex = (selectedIndex + delta + items.length) % items.length;
+    highlightSelection();
+    const sel = results.querySelector('.search-result.selected');
+    if (sel) sel.scrollIntoView({ block: 'nearest' });
+  }
+
+  function openNode(node) {
+    state.searchOpen = false;
+    openCodePanel(node);
+  }
+
+  function executeCommand(cmd) {
+    state.searchOpen = false;
+    cmd.action();
+    render();
+  }
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); selectRelative(1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); selectRelative(-1); }
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      const idx = selectedIndex >= 0 ? selectedIndex : 0;
+      const item = items[idx];
+      if (!item) return;
+      if (item.kind === 'command') executeCommand(item); else openNode(item.node);
+    }
+  });
 
   let searchTimeout = null;
+  let requestSeq = 0;
 
   input.addEventListener('input', () => {
     const q = input.value.trim();
-    if (!q) { renderResults(defaults); return; }
-    
-    // Always include any defaults that match locally
-    const filteredDefaults = defaults.filter(r => r.text.toLowerCase().includes(q.toLowerCase()) || r.hint.toLowerCase().includes(q.toLowerCase()));
-    
-    // Show a loading indicator
-    renderResults([
-      ...filteredDefaults,
-      { icon: '↻', text: 'Searching...', hint: '', action: () => {} }
-    ]);
-
     clearTimeout(searchTimeout);
+    if (!q) {
+      requestSeq++;
+      items = commands;
+      selectedIndex = -1;
+      renderRows();
+      return;
+    }
+
+    const seq = ++requestSeq;
+    const local = commands.filter(c =>
+      (c.text + ' ' + (c.hint || '')).toLowerCase().includes(q.toLowerCase())
+    );
+    items = local;
+    selectedIndex = -1;
+    results.innerHTML = '';
+    results.appendChild(el('div', { class: 'search-loading' },
+      el('span', { class: 'spinner' }),
+      el('span', {}, 'Searching…'),
+    ));
+
     searchTimeout = setTimeout(async () => {
-        try {
-            const res = await api('/search?query=' + encodeURIComponent(q));
-            const resultsData = res.results || [];
-            
-            const nodeResults = resultsData.map(n => {
-                const pathParts = (n.path || '').replace(/\\/g, '/').split('/');
-                const hintBase = pathParts.pop() || '';
-                const scoreText = n.score ? ` (Score: ${n.score.toFixed(2)})` : '';
-                return {
-                    icon: n.node_type === 'file' ? Icons.file : 'ƒ',
-                    text: n.title || n.id,
-                    hint: hintBase + scoreText,
-                    action: () => {
-                        state.searchOpen = false;
-                        state.expandedNodes.add(n.id);
-                        navigate('explorer');
-                        setTimeout(() => selectEntity(n.id), 150);
-                    }
-                };
-            });
-            
-            renderResults([...filteredDefaults, ...nodeResults]);
-        } catch (e) {
-            console.error('Search error:', e);
-            renderResults([...filteredDefaults, { icon: '⚠', text: 'Error searching nodes', hint: '', action: () => {} }]);
-        }
-    }, 300);
+      try {
+        const res = await api('/search?query=' + encodeURIComponent(q));
+        if (seq !== requestSeq) return; // stale response
+        items = [
+          ...local,
+          ...(res.results || []).map(n => ({ kind: 'node', node: n })),
+        ];
+        selectedIndex = -1;
+        renderRows();
+      } catch (err) {
+        if (seq !== requestSeq) return;
+        items = [...local];
+        results.innerHTML = '';
+        results.appendChild(el('div', { class: 'search-empty' }, 'Search failed: ' + err.message));
+      }
+    }, 120);
   });
 
   const footer = el('div', { class: 'search-footer' });
@@ -1526,6 +1802,212 @@ function renderSearch() {
   });
 
   return overlay;
+}
+
+function buildSearchCommands() {
+  const list = [
+    { kind: 'command', icon: Icons.home, text: 'Home', hint: 'Dashboard', action: () => navigate('home') },
+    { kind: 'command', icon: Icons.plus, text: 'Add Repository', hint: 'GitHub or local', action: () => { openAddRepoModal(); navigate('home'); } },
+    { kind: 'command', icon: Icons.settings, text: 'Settings', hint: 'Configuration', action: () => navigate('settings') },
+  ];
+  if (state.activeRepo) {
+    list.push(
+      { kind: 'command', icon: Icons.search, text: 'Summaries', hint: state.activeRepo.name, action: () => navigate('explorer') },
+      { kind: 'command', icon: Icons.cloud, text: 'Graph View', hint: state.activeRepo.name, action: () => navigate('graph') },
+      { kind: 'command', icon: Icons.chat, text: 'Chat', hint: state.activeRepo.name, action: () => navigate('chat') },
+    );
+  }
+  for (const r of state.repos) {
+    list.push({ kind: 'command', icon: Icons.repo, text: `${r.owner}/${r.name}`, hint: 'Repository', action: () => openRepo(r) });
+  }
+  return list;
+}
+
+function closeSearch() {
+  state.searchOpen = false;
+  render();
+}
+
+// ─── Code / Details Panel ───────────────────────────────────────
+function openCodePanel(node) {
+  state.codePanel = { node };
+  render();
+}
+
+function closeCodePanel() {
+  state.codePanel = null;
+  render();
+}
+
+function renderCodePanel() {
+  const src = state.codePanel.node;
+  const meta = getNodeTypeMeta(src.node_type);
+
+  const overlay = el('div', {
+    class: 'code-panel-overlay',
+    onClick: (e) => { if (e.target === overlay) closeCodePanel(); },
+  });
+
+  const panel = el('div', { class: 'code-panel' });
+
+  const header = el('div', { class: 'code-panel-header' },
+    el('span', { class: 'code-panel-icon', html: meta.icon }),
+    el('div', { class: 'code-panel-heading' },
+      el('div', { class: 'code-panel-title', title: src.title }, src.title || src.id),
+      el('div', { class: 'code-panel-meta' },
+        el('span', { class: 'code-panel-type' }, meta.label),
+        el('span', { class: 'code-panel-dot' }, '·'),
+        el('span', { class: 'code-panel-path', title: src.path }, displayPath(src.path) || src.path),
+        ...((src.start_line != null && src.end_line != null) ? [
+          el('span', { class: 'code-panel-dot' }, '·'),
+          el('span', { class: 'code-panel-lines' }, `Lines ${src.start_line}–${src.end_line}`),
+        ] : []),
+      ),
+    ),
+    el('button', { class: 'modal-close code-panel-close', onClick: closeCodePanel, html: Icons.x }),
+  );
+
+  const body = el('div', { class: 'code-panel-body', id: 'code-panel-body' });
+  body.appendChild(el('div', { class: 'code-panel-loading' },
+    el('span', { class: 'spinner' }),
+    el('span', {}, 'Loading code…'),
+  ));
+
+  panel.appendChild(header);
+  panel.appendChild(body);
+  overlay.appendChild(panel);
+
+  api('/get_code?node_id=' + encodeURIComponent(src.id))
+    .then((data) => {
+      const bodyEl = document.getElementById('code-panel-body');
+      if (bodyEl) renderCodePanelDetails(bodyEl, data);
+    })
+    .catch((err) => {
+      const bodyEl = document.getElementById('code-panel-body');
+      if (!bodyEl) return;
+      bodyEl.innerHTML = '';
+      bodyEl.appendChild(el('div', { class: 'code-panel-error' },
+        el('span', { html: Icons.x }),
+        el('span', {}, 'Failed to load code: ' + err.message),
+      ));
+    });
+
+  return overlay;
+}
+
+function renderCodePanelDetails(body, data) {
+  body.innerHTML = '';
+
+  // Summary
+  const summarySection = el('div', { class: 'code-section' });
+  summarySection.appendChild(el('div', { class: 'code-section-title' }, 'Summary'));
+  if (data.summary) {
+    const s = el('div', { class: 'code-summary' });
+    s.textContent = data.summary;
+    summarySection.appendChild(s);
+  } else {
+    summarySection.appendChild(el('div', { class: 'code-summary-empty' }, 'No summary available for this node.'));
+  }
+  body.appendChild(summarySection);
+
+  const imports = data.imports || [];
+  const internalImports = imports.filter((imp) => imp.is_internal);
+  const externalImports = imports.filter((imp) => !imp.is_internal);
+
+  const buildImportRow = (imp, label, clickable) => {
+    const row = el('div', {
+      class: 'code-import' + (clickable ? ' code-import-clickable' : '') + (imp.is_internal ? ' code-import-repo' : ''),
+    },
+      el('span', { class: 'code-import-icon', html: Icons.arrowDown }),
+      el('span', { class: 'code-import-main' },
+        el('span', { class: 'code-import-title', title: imp.raw || imp.title },
+          imp.is_internal ? (displayPath(imp.path) || imp.title || imp.module || imp.raw || imp.id)
+                          : (imp.module || imp.title || imp.raw || imp.id)),
+        (imp.imported_symbols && imp.imported_symbols.length > 0)
+          ? el('span', { class: 'code-import-path' }, imp.imported_symbols.join(', '))
+          : null,
+      ),
+      el('span', { class: 'code-import-type' }, label),
+    );
+    if (clickable) {
+      row.title = 'Open imported file';
+      row.onclick = () => openNodeRef({
+        id: imp.target_file_id,
+        title: imp.title || imp.module,
+        node_type: 'file',
+        path: imp.path || '',
+        language: data.language || '',
+        start_line: 1,
+        end_line: null,
+      });
+    }
+    return row;
+  };
+
+  // Repository / internal imports — shown first and prominently
+  const repoSection = el('div', { class: 'code-section' });
+  repoSection.appendChild(el('div', { class: 'code-section-title' }, 'Repository Imports'));
+  if (internalImports.length === 0) {
+    repoSection.appendChild(el('div', { class: 'code-summary-empty' }, 'No repository imports detected.'));
+  } else {
+    const list = el('div', { class: 'code-imports' });
+    for (const imp of internalImports) {
+      list.appendChild(buildImportRow(imp, imp.node_type === 'file' ? 'Repo' : 'Module', !!imp.target_file_id));
+    }
+    repoSection.appendChild(list);
+  }
+  body.appendChild(repoSection);
+
+  // Source code
+  const codeSection = el('div', { class: 'code-section' });
+  const codeTitle = el('div', { class: 'code-section-title flex-between' },
+    el('span', {}, 'Code'),
+    data.language ? el('span', { class: 'code-lang-badge' }, data.language) : null,
+  );
+  codeSection.appendChild(codeTitle);
+  if (data.code) {
+    codeSection.appendChild(buildCodeTable(data.code, data.start_line));
+  } else {
+    codeSection.appendChild(el('div', { class: 'code-summary-empty' }, 'No source code available for this node.'));
+  }
+  body.appendChild(codeSection);
+
+  // External / standard-library imports
+  const extSection = el('div', { class: 'code-section' });
+  extSection.appendChild(el('div', { class: 'code-section-title' }, 'External / Standard Library Imports'));
+  if (externalImports.length === 0) {
+    if (imports.length === 0) {
+      extSection.appendChild(el('div', { class: 'code-summary-empty' }, 'No import / dependency edges found for this file.'));
+    } else {
+      extSection.appendChild(el('div', { class: 'code-summary-empty' }, 'No external imports detected.'));
+    }
+  } else {
+    const list = el('div', { class: 'code-imports' });
+    for (const imp of externalImports) {
+      list.appendChild(buildImportRow(imp, 'External', false));
+    }
+    extSection.appendChild(list);
+  }
+  body.appendChild(extSection);
+}
+
+function buildCodeTable(code, startLine) {
+  const scroll = el('div', { class: 'code-scroll' });
+  const table = el('div', { class: 'code-table' });
+  let lines = String(code || '').split('\n');
+  if (lines.length > 1 && lines[lines.length - 1] === '') lines.pop();
+  if (lines.length === 0) lines = [''];
+  const start = (typeof startLine === 'number' && startLine >= 1) ? startLine : 1;
+  lines.forEach((ln, i) => {
+    const row = el('div', { class: 'code-line-row' });
+    row.appendChild(el('span', { class: 'code-line-no' }, String(start + i)));
+    const content = el('span', { class: 'code-line-content' });
+    content.textContent = ln;
+    row.appendChild(content);
+    table.appendChild(row);
+  });
+  scroll.appendChild(table);
+  return scroll;
 }
 
 // ─── Empty State ────────────────────────────────────────────────
@@ -1587,9 +2069,11 @@ document.addEventListener('keydown', (e) => {
     state.searchOpen = !state.searchOpen;
     render();
   }
-  // Escape → close search/modal
+  // Escape → close code panel / search / modal
   if (e.key === 'Escape') {
-    if (state.searchOpen) {
+    if (state.codePanel) {
+      closeCodePanel();
+    } else if (state.searchOpen) {
       state.searchOpen = false;
       render();
     } else if (state.modalOpen) {
@@ -1604,66 +2088,56 @@ render();
 
 // ─── Graph View ─────────────────────────────────────────────────
 function createResizer(targetId, isLeft) {
-    const resizer = el('div', { 
-        style: { width: '4px', cursor: 'col-resize', background: 'transparent', flexShrink: 0, zIndex: 10, transition: 'background 0.2s' } 
-    });
-    resizer.onmouseenter = () => resizer.style.background = 'var(--accent)';
-    resizer.onmouseleave = () => resizer.style.background = 'transparent';
-    
-    resizer.onmousedown = (e) => {
+    const MIN_PX = 200;
+    const MAX_PX = 560;
+    const handle = el('div', { class: 'graph-pane-resizer', title: 'Drag to resize' });
+    handle.onmousedown = (e) => {
         e.preventDefault();
         const target = document.getElementById(targetId);
         if (!target) return;
         document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
         const startX = e.clientX;
-        const startWidth = parseInt(window.getComputedStyle(target).width, 10);
-        
+        const startWidth = target.getBoundingClientRect().width;
         const onMouseMove = (moveEvent) => {
-            if (isLeft) {
-                target.style.width = Math.max(150, startWidth + moveEvent.clientX - startX) + 'px';
-            } else {
-                target.style.width = Math.max(200, startWidth - (moveEvent.clientX - startX)) + 'px';
-            }
+            const delta = isLeft
+                ? (moveEvent.clientX - startX)
+                : (startX - moveEvent.clientX);
+            const width = Math.min(MAX_PX, Math.max(MIN_PX, startWidth + delta));
+            target.style.width = width + 'px';
         };
         const onMouseUp = () => {
-            document.body.style.cursor = 'default';
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mouseup', onMouseUp);
         };
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
     };
-    return resizer;
+    return handle;
 }
 
 function renderGraphView() {
-const container = el('div', { class: 'graph-3pane-layout', style: { display: 'flex', width: '100%', height: '100%' } });
+const container = el('div', { class: 'graph-3pane-layout', style: { display: 'flex', width: '100%', height: '100%', position: 'relative' } });
 
 if (!state.nodes || !state.nodes.nodes || state.nodes.nodes.length === 0) {
 container.appendChild(renderEmptyState(Icons.cloud, 'No graph data', 'Parse a repository first to view its graph.', 'Add Repository', () => openAddRepoModal()));
 return container;
 }
 
-// LEFT PANE (Tree)
-const leftPane = el('div', { id: 'graph-left-pane', class: 'graph-left-pane', style: { width: '260px', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', background: 'var(--bg-surface)', overflowY: 'auto' } });
-const searchDiv = el('div', { class: 'explorer-search', style: { padding: '10px' } });
-searchDiv.appendChild(el('span', { class: 'explorer-search-icon', html: Icons.search }));
-const searchInput = el('input', {
-class: 'input',
-placeholder: 'Search summaries...',
-style: { paddingLeft: '32px', cursor: 'pointer' },
-value: '',
-readOnly: true
-});
-searchInput.addEventListener('click', () => {
-    state.searchOpen = true;
-    render();
-});
-searchDiv.appendChild(searchInput);
-leftPane.appendChild(searchDiv);
-const treeContainer = el('div', { id: 'tree-container', style: { padding: '0 10px' } });
-renderTreeInto(treeContainer, state.structure, state.explorerSearch);
+// LEFT PANE (Tree) — floating drawer
+const leftPane = el('div', { id: 'graph-left-pane', class: 'graph-left-pane' });
+const lHeader = el('div', { class: 'pane-header' });
+lHeader.appendChild(el('span', { class: 'pane-title' }, 'Files'));
+const lClose = el('button', { class: 'btn btn-icon pane-close', html: Icons.x });
+lClose.onclick = () => leftPane.classList.add('closed');
+lHeader.appendChild(lClose);
+leftPane.appendChild(lHeader);
+const treeContainer = el('div', { id: 'tree-container', class: 'graph-tree-scroll' });
+renderTreeInto(treeContainer, state.structure);
 leftPane.appendChild(treeContainer);
+leftPane.appendChild(createResizer('graph-left-pane', true));
 
 // CENTER PANE (Graph)
 const centerPane = el('div', { class: 'graph-center-pane', style: { flex: 1, position: 'relative', background: 'var(--bg-root)' } });
@@ -1672,51 +2146,63 @@ const centerPane = el('div', { class: 'graph-center-pane', style: { flex: 1, pos
 if (!state.graphFilters) {
     state.graphFilters = { Folders: true, Files: true, Classes: true, Functions: true, Methods: true, Interfaces: true, Misc: true };
 }
-const filterContainer = el('div', {
-    style: {
-        position: 'absolute', top: '10px', left: '50%', transform: 'translateX(-50%)',
-        background: 'var(--bg-surface)', border: '1px solid var(--border-color)',
-        borderRadius: '6px', padding: '6px 12px', display: 'flex', gap: '12px', flexWrap: 'wrap',
-        zIndex: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.5)', maxWidth: '90%', justifyContent: 'center'
-    }
-});
+const filterContainer = el('div', { class: 'graph-filter-container' });
 
 Object.keys(NODE_CATEGORIES).forEach(cat => {
     const isChecked = state.graphFilters[cat];
     const catColor = NODE_CATEGORIES[cat].color;
-    
-    const pill = el('div', {
-        style: {
-            display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
-            opacity: isChecked ? 1 : 0.4, transition: 'opacity 0.2s',
-            fontSize: '11px', fontWeight: '500', color: 'var(--text-primary)'
-        },
+    const pill = el('button', {
+        type: 'button',
+        class: 'graph-filter-pill' + (isChecked ? ' active' : ''),
+        title: (isChecked ? 'Hide' : 'Show') + ' ' + cat,
+        role: 'checkbox',
+        'aria-checked': isChecked ? 'true' : 'false',
         onClick: () => {
             state.graphFilters[cat] = !state.graphFilters[cat];
             render(); // re-render the whole graph view
         }
     });
-    
-    pill.appendChild(el('div', {
-        style: { width: '10px', height: '10px', borderRadius: '2px', background: catColor }
-    }));
-    pill.appendChild(document.createTextNode(cat));
+    pill.appendChild(el('span', { class: 'graph-filter-swatch', style: { background: catColor } }));
+    pill.appendChild(el('span', { class: 'graph-filter-label' }, cat));
     filterContainer.appendChild(pill);
 });
 centerPane.appendChild(filterContainer);
 
+// Legend (category colors + import edge style)
+const legendBar = el('div', { class: 'graph-legend' });
+for (const cat of Object.keys(NODE_CATEGORIES)) {
+    const item = el('span', { class: 'graph-legend-item' });
+    item.appendChild(el('span', { class: 'graph-legend-swatch', style: { background: NODE_CATEGORIES[cat].color } }));
+    item.appendChild(document.createTextNode(cat));
+    legendBar.appendChild(item);
+}
+legendBar.appendChild(el('span', { class: 'graph-legend-item graph-legend-import' },
+    el('span', { class: 'graph-legend-dash' }),
+    el('span', {}, 'Import'),
+));
+centerPane.appendChild(legendBar);
+
 const toggleLeftBtn = el('button', { 
     class: 'btn btn-icon', 
-    style: { position: 'absolute', top: '10px', left: '10px', zIndex: 10, background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '4px' },
-    html: Icons.menu || '☰' 
+    style: { position: 'absolute', top: '10px', left: '10px', zIndex: 20, background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '6px' },
+    html: Icons.menu
 });
 toggleLeftBtn.onclick = () => {
     const pane = document.getElementById('graph-left-pane');
-    if (pane) {
-        pane.style.display = pane.style.display === 'none' ? 'flex' : 'none';
-    }
+    if (pane) pane.classList.toggle('closed');
 };
 centerPane.appendChild(toggleLeftBtn);
+
+const toggleRightBtn = el('button', { 
+    class: 'btn btn-icon', 
+    style: { position: 'absolute', top: '10px', right: '10px', zIndex: 20, background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '6px' },
+    html: Icons.info
+});
+toggleRightBtn.onclick = () => {
+    const pane = document.getElementById('inspector-container');
+    if (pane) pane.classList.toggle('closed');
+};
+centerPane.appendChild(toggleRightBtn);
 
 const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 svg.id = 'd3-svg-canvas';
@@ -1724,13 +2210,19 @@ svg.style.width = '100%';
 svg.style.height = '100%';
 centerPane.appendChild(svg);
 
-// RIGHT PANE (Inspector)
-const rightPane = el('div', { id: 'inspector-container', class: 'graph-right-pane', style: { width: '300px', borderLeft: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', background: 'var(--bg-surface)', padding: '16px', overflowY: 'auto' } });
+// RIGHT PANE (Inspector) — floating drawer
+const rightPane = el('div', { id: 'inspector-container', class: 'graph-right-pane' });
+const rHeader = el('div', { class: 'pane-header' });
+rHeader.appendChild(el('span', { class: 'pane-title' }, 'Inspector'));
+const rClose = el('button', { class: 'btn btn-icon pane-close', html: Icons.x });
+rClose.onclick = () => rightPane.classList.add('closed');
+rHeader.appendChild(rClose);
+rightPane.appendChild(rHeader);
+const rBody = el('div', { id: 'inspector-body', class: 'pane-body' });
+rightPane.appendChild(rBody);
 
 container.appendChild(leftPane);
-container.appendChild(createResizer('graph-left-pane', true));
 container.appendChild(centerPane);
-container.appendChild(createResizer('inspector-container', false));
 container.appendChild(rightPane);
 
 // Initialize D3 graph on next tick
@@ -1751,7 +2243,7 @@ function selectEntity(id) {
 }
 
 function updateInspector() {
-    const container = document.getElementById('inspector-container');
+    const container = document.getElementById('inspector-body');
     if (!container) return;
     container.innerHTML = '';
     
@@ -1760,12 +2252,9 @@ function updateInspector() {
         return;
     }
     
-    // Find node in state
     let treeTarget = null;
     let nodeTarget = null;
-    let isFile = false;
     
-    // Try finding in structure
     const findInTree = (n) => {
         if (n.id === state.selectedId) return n;
         for (const c of (n.children || [])) {
@@ -1777,51 +2266,73 @@ function updateInspector() {
     if (state.structure) {
         treeTarget = findInTree(state.structure);
     }
-    
-    // Try finding in nodes if not found
     if (state.nodes && state.nodes.nodes) {
         nodeTarget = state.nodes.nodes.find(n => n.id === state.selectedId);
     }
-    
-    const target = { ...(treeTarget || {}), ...(nodeTarget || {}) };
     
     if (!treeTarget && !nodeTarget) {
         container.appendChild(el('div', { class: 'text-secondary text-center', style: { marginTop: '50px' } }, 'Node not found'));
         return;
     }
     
-    isFile = target.type === 'file' || target.node_type === 'file';
-    
-    container.appendChild(el('h3', { style: { marginBottom: '8px', wordBreak: 'break-all' } }, target.name || target.title || 'Unknown'));
-    container.appendChild(el('div', { class: 'text-xs text-secondary', style: { marginBottom: '16px' } }, target.path || ''));
-    
-    container.appendChild(el('div', { class: 'text-sm mb-2' }, el('strong', {}, 'Type: '), el('span', {}, target.type || target.node_type || 'Unknown')));
-    
-    container.appendChild(el('h4', { style: { marginTop: '16px', marginBottom: '8px' } }, 'Summary'));
+    const target = { ...(treeTarget || {}), ...(nodeTarget || {}) };
+    const nodeType = target.node_type || target.type || 'file';
+    const meta = getNodeTypeMeta(nodeType);
+    const title = target.title || target.name || 'Unknown';
+    const pathStr = displayPath(target.path) || target.path || '';
+    const hasLines = target.start_line != null;
+    const linesStr = hasLines
+        ? (target.end_line != null && target.end_line >= target.start_line
+            ? `${target.start_line}–${target.end_line}`
+            : String(target.start_line))
+        : '—';
+
+    container.appendChild(el('h3', { class: 'inspector-title', title }, title));
+
+    const metaRow = el('div', { class: 'inspector-meta' });
+    metaRow.appendChild(el('span', { class: 'badge badge-accent inspector-type' }, meta.label || displayNodeTypeLabel(nodeType)));
+    if (target.language) {
+        metaRow.appendChild(el('span', { class: 'badge badge-default' }, target.language));
+    }
+    container.appendChild(metaRow);
+
+    const rows = el('div', { class: 'inspector-rows' });
+    rows.appendChild(makeInspectorRow('Type', meta.label || displayNodeTypeLabel(nodeType)));
+    rows.appendChild(makeInspectorRow('File', pathStr || '—'));
+    rows.appendChild(makeInspectorRow('Lines', linesStr));
+    container.appendChild(rows);
+
+    container.appendChild(el('h4', { class: 'inspector-section-title' }, 'Summary'));
     if (target.summary) {
-        container.appendChild(el('div', { class: 'text-sm text-secondary' }, target.summary));
+        const s = el('div', { class: 'inspector-summary' });
+        s.textContent = target.summary;
+        container.appendChild(s);
     } else {
-        container.appendChild(el('div', { class: 'text-sm text-secondary', style: { fontStyle: 'italic' } }, 'No summary available for this node.'));
+        container.appendChild(el('div', { class: 'text-sm text-tertiary' }, 'No summary available for this node.'));
     }
-    
-    // Dependencies
-    if (isFile && state.edges && state.edges.edges) {
-        const outEdges = state.edges.edges.filter(e => e.source_file_id === target.id);
-        const inEdges = state.edges.edges.filter(e => e.target_file_id === target.id);
-        
-        if (outEdges.length > 0) {
-            container.appendChild(el('h4', { style: { marginTop: '16px', marginBottom: '8px' } }, 'Imports'));
-            outEdges.forEach(e => {
-                container.appendChild(el('div', { class: 'text-xs text-secondary mb-1' }, e.target_path || e.target_file_id));
-            });
-        }
-        if (inEdges.length > 0) {
-            container.appendChild(el('h4', { style: { marginTop: '16px', marginBottom: '8px' } }, 'Imported by'));
-            inEdges.forEach(e => {
-                container.appendChild(el('div', { class: 'text-xs text-secondary mb-1' }, e.source_path || e.source_file_id));
-            });
-        }
-    }
+
+    container.appendChild(el('button', {
+        class: 'btn btn-secondary inspector-detail-btn',
+        onClick: () => openCodePanel({
+            id: target.id,
+            title,
+            node_type: nodeType,
+            path: target.path || '',
+            language: target.language,
+            start_line: hasLines ? target.start_line : 1,
+            end_line: hasLines && target.end_line != null ? target.end_line : target.start_line,
+        }),
+    },
+        el('span', { html: Icons.braces }),
+        el('span', {}, 'View details'),
+    ));
+}
+
+function makeInspectorRow(label, value) {
+    return el('div', { class: 'inspector-row' },
+        el('span', { class: 'inspector-row-label' }, label),
+        el('span', { class: 'inspector-row-value', title: value }, value),
+    );
 }
 
 function highlightNodeInGraph(id) {
@@ -1894,25 +2405,27 @@ svg.call(zoom.transform, d3.zoomIdentity.scale(0.8));
 const nodesMap = new Map();
 const nodes = [];
 
-state.nodes.nodes.forEach(n => {
+const hasSummary = (n) => !!(n && n.summary && n.summary.trim().length > 0);
+
+// Pipeline:
+//   all nodes -> keep summarized nodes -> apply category filters -> visible node set
+const summarizedCodeNodes = (state.nodes.nodes || []).filter(hasSummary);
+summarizedCodeNodes.forEach(n => {
     const rawGroup = n.node_type || 'node';
     const cat = getNodeCategory(rawGroup);
     if (!state.graphFilters || !state.graphFilters[cat]) return;
-    
+
     const nodeData = { id: n.id, title: n.title || n.node_type || 'Unknown', group: cat, radius: 8 };
     nodesMap.set(n.id, nodeData);
     nodes.push(nodeData);
 });
 
-const links = [];
-
+// File/folder entries from the structure tree (only when summarized + category visible)
 const addTreeNodes = (n) => {
     if (!n) return;
     const rawGroup = n.type || 'folder';
     const cat = getNodeCategory(rawGroup);
-    
-    // Check if the current node is visible
-    if (state.graphFilters && state.graphFilters[cat]) {
+    if (state.graphFilters && state.graphFilters[cat] && hasSummary(n)) {
         const isFile = n.type === 'file';
         const nodeData = { id: n.id, title: n.name || n.id, group: cat, radius: isFile ? 10 : 14 };
         if (!nodesMap.has(n.id)) {
@@ -1920,38 +2433,51 @@ const addTreeNodes = (n) => {
             nodes.push(nodeData);
         }
     }
-    
-    // Always process children so we can render them even if parent is hidden,
-    // though linking them requires the parent to be visible.
-    (n.children || []).forEach(c => {
-        addTreeNodes(c);
-        if (nodesMap.has(n.id) && nodesMap.has(c.id)) {
-            links.push({ source: n.id, target: c.id, value: 2 });
-        }
-    });
+    (n.children || []).forEach(c => addTreeNodes(c));
 };
 if (state.structure) {
     addTreeNodes(state.structure);
 }
 
+const links = [];
+
+// Tree hierarchy edges — only when both endpoints are visible
+const linkTree = (n) => {
+    if (!n) return;
+    (n.children || []).forEach(c => {
+        linkTree(c);
+        if (nodesMap.has(n.id) && nodesMap.has(c.id)) {
+            links.push({ source: n.id, target: c.id, value: 2, edgeType: 'normal' });
+        }
+    });
+};
+if (state.structure) {
+    linkTree(state.structure);
+}
+
+// edges.json relationships — classify by actual metadata, only render when both endpoints visible
 if (state.edges && state.edges.edges) {
     state.edges.edges.forEach(e => {
         if (nodesMap.has(e.source_file_id) && nodesMap.has(e.target_file_id)) {
+            const isImport = String(e.type || '').toLowerCase() === 'import';
             links.push({
                 source: e.source_file_id,
                 target: e.target_file_id,
-                value: 1
+                value: 1,
+                edgeType: isImport ? 'import' : 'normal',
             });
         }
     });
 }
 
+// Code node parent/child edges — only when both endpoints are visible
 state.nodes.nodes.forEach(n => {
     if (n.parent_id && nodesMap.has(n.parent_id) && nodesMap.has(n.id)) {
         links.push({
             source: n.parent_id,
             target: n.id,
-            value: 2
+            value: 2,
+            edgeType: 'normal',
         });
     }
 });
@@ -1970,6 +2496,7 @@ const link = g.append('g')
 .selectAll('line')
 .data(links)
 .join('line')
+.attr('class', d => d.edgeType === 'import' ? 'graph-link graph-link-import' : 'graph-link')
 .attr('stroke-width', d => Math.max(1.5, Math.sqrt(d.value) * 1.5));
 
 const node = g.append('g')
@@ -1981,7 +2508,7 @@ const node = g.append('g')
 .on('click', (event, d) => {
     selectEntity(d.id);
     const tc = document.getElementById('tree-container');
-    if (tc) renderTreeInto(tc, state.structure, state.explorerSearch);
+    if (tc) renderTreeInto(tc, state.structure);
 });
 
 node.append('circle')

@@ -13,6 +13,9 @@ class RepoRequest(BaseModel):
             raise ValueError("URL must be a github.com repository")
         return v.rstrip("/")
 
+class LocalRepoRequest(BaseModel):
+    folder_path: str
+
 class ConfigRequest(BaseModel):
     gemini_api_key: str | None = None
     provider: str | None = None
@@ -46,6 +49,7 @@ class QueryRequest(BaseModel):
     query: str
     repo_owner: str | None = None
     repo_name: str | None = None
+    deep: bool = False
 
 class Citation(BaseModel):
     id: str | None = None
