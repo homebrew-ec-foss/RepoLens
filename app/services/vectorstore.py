@@ -29,18 +29,24 @@ _UPSERT_BATCH_SIZE = 100
 _NAMESPACE = uuid.UUID("7c53f8bb-fd95-4a91-bc1c-6b9b7d2e65ef")
 
 _client: QdrantClient | None = None
+_client_db: str | None = None
 
 
 def get_client() -> QdrantClient:
-    global _client
-    if _client is None:
-        qdrant_url = os.getenv("QDRANT_URL")
-        if qdrant_url:
+    global _client, _client_db
+    qdrant_url = os.getenv("QDRANT_URL")
+    if qdrant_url:
+        if _client is None:
             _client = QdrantClient(url=qdrant_url)
-        else:
-            db_path = state.out_dir / "qdrant_db"
-            db_path.mkdir(exist_ok=True, parents=True)
-            _client = QdrantClient(path=str(db_path))
+        return _client
+    # embedded storage lives inside the active repo's repolens/ folder,
+    # so each repository gets its own vector DB.
+    db_path = state.repo_dir / "qdrant_db"
+    db_str = str(db_path)
+    if _client is None or _client_db != db_str:
+        db_path.mkdir(parents=True, exist_ok=True)
+        _client = QdrantClient(path=db_str)
+        _client_db = db_str
     return _client
 
 
@@ -167,8 +173,8 @@ def ensure_collection() -> None:
 
 
 def index_nodes() -> dict:
-    nodes_path = (state.out_dir / "nodes.json").resolve()
-    structure_path = (state.out_dir / "filestructure.json").resolve()
+    nodes_path = (state.repo_dir / "nodes.json").resolve()
+    structure_path = (state.repo_dir / "filestructure.json").resolve()
 
     if not nodes_path.exists():
         raise RuntimeError("nodes.json not found. Call POST /nodes first.")

@@ -6,6 +6,8 @@ from google import genai
 from google.genai import types
 from dotenv import load_dotenv
 
+from app.storage.state import state
+
 load_dotenv()
 _client = None
 
@@ -91,7 +93,7 @@ class BM25KeywordSearch:
     def load_file_tree(self):
         if self.file_tree is not None:
             return self.file_tree
-        tree_path = Path(__file__).parent.parent.parent / 'out' / 'filestructure.json'
+        tree_path = state.repo_dir / 'filestructure.json'
         if tree_path.is_file():
             with open(tree_path, 'r', encoding='utf-8') as f:
                 self.file_tree = json.load(f)
@@ -178,7 +180,7 @@ def _get_search_engine(nodes_path: Path) -> BM25KeywordSearch:
 
 
 def _nodes_json_path() -> Path:
-    return Path(__file__).parent.parent.parent / 'out' / 'nodes.json'
+    return state.repo_dir / 'nodes.json'
 
 
 def answer_query(query):

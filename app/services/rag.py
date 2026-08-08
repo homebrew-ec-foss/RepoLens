@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 
 from dotenv import load_dotenv
 from google import genai
@@ -61,6 +62,8 @@ def _build_deep_code_context(nodes: list[dict], limit: int) -> list[dict]:
         code = (data.get("code") or "").strip()
         if not code:
             continue
+        start_line = data.get("start_line")
+        end_line = data.get("end_line")
         code_nodes.append({
             "id": node_id,
             "kind": data.get("node_type") or node.get("kind"),
@@ -68,12 +71,33 @@ def _build_deep_code_context(nodes: list[dict], limit: int) -> list[dict]:
             "node_type": data.get("node_type"),
             "language": data.get("language") or node.get("language"),
             "path": data.get("path") or node.get("path"),
-            "start_line": data.get("start_line") or node.get("start_line"),
-            "end_line": data.get("end_line") or node.get("end_line"),
+            "start_line": start_line if start_line is not None else node.get("start_line"),
+            "end_line": end_line if end_line is not None else node.get("end_line"),
             "summary": data.get("summary") or node.get("summary"),
             "code": code,
         })
     return code_nodes
+
+
+def _parse_rag_response(text: str) -> tuple[str, list[str]]:
+    raw = (text or "").strip()
+    payload: object | None = None
+
+    stripped = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw, flags=re.IGNORECASE)
+    for candidate in (raw, stripped):
+        try:
+            payload = json.loads(candidate)
+            break
+        except (json.JSONDecodeError, TypeError):
+            continue
+
+    if not isinstance(payload, dict):
+        raise json.JSONDecodeError("RAG response was not a JSON object", raw, 0)
+
+    answer = payload.get("answer") or payload.get("response") or ""
+    answer_text = str(answer) if answer else (str(payload.get("text")) if payload.get("text") else "")
+    citation_ids = [str(i) for i in (payload.get("citations") or []) if i]
+    return answer_text, citation_ids
 
 
 def answer_query(query: str, top_k: int | None = None, deep: bool = False) -> dict:
@@ -97,11 +121,8 @@ def answer_query(query: str, top_k: int | None = None, deep: bool = False) -> di
     answer_text = text
     citation_ids: list[str] = []
     try:
-        data = json.loads(text)
-        if isinstance(data, dict):
-            answer_text = str(data.get("answer") or data.get("response") or text)
-            citation_ids = [str(i) for i in (data.get("citations") or []) if i]
-    except (json.JSONDecodeError, TypeError):
+        answer_text, citation_ids = _parse_rag_response(text)
+    except (json.JSONDecodeError, TypeError, ValueError):
         logger.warning("RAG response was not valid JSON; returning raw text")
 
     id_to_node = {node.get("id"): node for node in retrieved}

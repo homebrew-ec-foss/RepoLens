@@ -23,6 +23,10 @@ class ConfigRequest(BaseModel):
 class ConfigResponse(BaseModel):
     api_key_set: bool
     api_key_preview: str | None = None
+    provider: str | None = None
+    model: str | None = None
+    embedding_model: str | None = None
+    vector_db: str | None = None
 
 class HealthResponse(BaseModel):
     status: str

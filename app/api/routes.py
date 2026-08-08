@@ -71,10 +71,16 @@ async def get_config() -> ConfigResponse:
     
     is_set = bool(key)
     preview = f"{key[:4]}...{key[-4:]}" if is_set and len(key) > 8 else None
-    
+
+    from app.services.embeddings import EMBED_MODEL_NAME
+
     return ConfigResponse(
         api_key_set=is_set,
-        api_key_preview=preview
+        api_key_preview=preview,
+        provider="Gemini",
+        model=os.getenv("REPOLENS_RAG_MODEL", "gemini-3.1-flash-lite"),
+        embedding_model=EMBED_MODEL_NAME,
+        vector_db="Qdrant (embedded local)",
     )
 
 @router.get("/health", response_model=HealthResponse, status_code=status.HTTP_200_OK)
@@ -87,10 +93,10 @@ async def get_health() -> HealthResponse:
     )
 
 @router.post("/repo", response_model=StatusResponse, status_code=status.HTTP_200_OK)
-async def post_repo(body: RepoRequest) -> StatusResponse:
+def post_repo(body: RepoRequest) -> StatusResponse:
     logger.info("POST /repo  url=%s", body.github_url)
     try:
-        repo_path: Path = await github_svc.clone_repo(body.github_url)
+        repo_path: Path = github_svc.clone_repo(body.github_url)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
     except RuntimeError as exc:
@@ -152,10 +158,17 @@ def _validate_local_folder(folder_path: str) -> Path:
 
 
 @router.post("/repo/local", response_model=StatusResponse, status_code=status.HTTP_200_OK)
-async def post_repo_local(body: LocalRepoRequest) -> StatusResponse:
+def post_repo_local(body: LocalRepoRequest) -> StatusResponse:
     logger.info("POST /repo/local folder_path=%s", body.folder_path)
     folder = _validate_local_folder(body.folder_path)
     state.repo_path = folder
+    state.write_repo_state({
+        "kind": "local",
+        "owner": "local",
+        "name": folder.name,
+        "repo_path": str(folder),
+    })
+    state.register_repo("local", "local", folder.name, folder)
     logger.info("Local repo registered: %s", folder)
     return StatusResponse(
         status="ok",
@@ -163,7 +176,7 @@ async def post_repo_local(body: LocalRepoRequest) -> StatusResponse:
     )
 
 @router.post("/tree", response_model=StatusResponse, status_code=status.HTTP_200_OK)
-async def post_tree() -> StatusResponse:
+def post_tree() -> StatusResponse:
     logger.info("POST /tree  repo=%s", state.repo_path)
     try:
         out_path: Path = ts_svc.run_treesitter()
@@ -180,7 +193,7 @@ async def post_tree() -> StatusResponse:
 
 
 @router.post("/nodes", response_model=StatusResponse, status_code=status.HTTP_200_OK)
-async def post_nodes() -> StatusResponse:
+def post_nodes() -> StatusResponse:
     logger.info("POST /nodes")
     try:
         out_path: Path = nodes_svc.generate_nodes()
@@ -197,7 +210,7 @@ async def post_nodes() -> StatusResponse:
 
 
 @router.post("/edges", response_model=StatusResponse, status_code=status.HTTP_200_OK)
-async def post_edges() -> StatusResponse:
+def post_edges() -> StatusResponse:
     logger.info("POST /edges")
     try:
         out_path: Path = edges_svc.generate_edges()
@@ -214,7 +227,7 @@ async def post_edges() -> StatusResponse:
 
 
 @router.post("/summary", status_code=status.HTTP_200_OK)
-async def post_summary():
+def post_summary():
     logger.info("POST /summary")
     try:
         result = summaries_svc.run_summary_pipeline()
@@ -252,7 +265,7 @@ async def user_query(body: QueryRequest) -> StatusResponse:
             ),
         )
 @router.post("/index", response_model=StatusResponse, status_code=status.HTTP_200_OK)
-async def post_index() -> StatusResponse:
+def post_index() -> StatusResponse:
     logger.info("POST /index")
     try:
         result = vectorstore_svc.index_nodes()
@@ -332,34 +345,73 @@ async def get_data_file(file_name: str):
     safe_name = Path(file_name).name
     if safe_name != file_name:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file name")
-    path = (state.out_dir / safe_name).resolve()
+    path = (state.repo_dir / safe_name).resolve()
     if not path.is_file():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{file_name} not found in out directory")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{file_name} not found for the active repository")
     return FileResponse(path, media_type="application/json")
 
 @router.get("/repos", status_code=status.HTTP_200_OK)
 async def get_repos_list():
     logger.info("GET /repos")
-    fs_path = state.out_dir / "filestructure.json"
-    if fs_path.is_file():
+    repos: list[dict] = []
+    seen: set[str] = set()
+
+    def _add(owner: str, name: str, path: str, structure: dict | None) -> None:
+        key = str(Path(path).resolve())
+        if key in seen:
+            return
+        seen.add(key)
+        if not structure:
+            return
+        file_count = _count_files(structure)
+        summarized = _count_summarized(structure)
+        repos.append({
+            "owner": owner,
+            "name": structure.get("name") or name or Path(path).name,
+            "path": key,
+            "file_count": file_count,
+            "node_count": _count_nodes_from_files(structure),
+            "has_summaries": summarized > 0,
+            "summary_count": summarized,
+        })
+
+    def _read_structure(repo_path: Path) -> dict | None:
+        fs_path = repo_path / "repolens" / "filestructure.json"
+        if not fs_path.is_file():
+            return None
         try:
             with open(fs_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            name = data.get("name", "Unknown Repository")
-            file_count = _count_files(data)
-            summarized = _count_summarized(data)
-            return {"repos": [{
-                "owner": "local",
-                "name": name,
-                "path": str(state.out_dir),
-                "file_count": file_count,
-                "node_count": _count_nodes_from_files(data),
-                "has_summaries": summarized > 0,
-                "summary_count": summarized,
-            }]}
+                return json.load(f)
         except Exception:
-            pass
-    return {"repos": []}
+            return None
+
+    # 1. Registered repos (clones + local folders)
+    for spec in state.registered_repos:
+        try:
+            repo_path = Path(spec.get("path", "")).resolve()
+        except Exception:
+            continue
+        if not repo_path.is_dir():
+            continue
+        _add(
+            owner=spec.get("owner", "local"),
+            name=spec.get("name", repo_path.name),
+            path=str(repo_path),
+            structure=_read_structure(repo_path),
+        )
+
+    # 2. Clones present on disk (covers pre-registry clones)
+    repo_root = state.out_dir / "repo"
+    if repo_root.is_dir():
+        for owner_dir in sorted(repo_root.iterdir()):
+            if not owner_dir.is_dir():
+                continue
+            owner = owner_dir.name
+            for repo_dir in sorted(owner_dir.iterdir()):
+                if repo_dir.is_dir():
+                    _add(owner, repo_dir.name, str(repo_dir), _read_structure(repo_dir))
+
+    return {"repos": repos}
 
 
 def _count_files(node: dict) -> int:

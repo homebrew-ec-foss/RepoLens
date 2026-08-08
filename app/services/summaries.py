@@ -323,8 +323,8 @@ def _stage3_folder_summaries(structure: dict) -> None:
 
 
 def run_summary_pipeline() -> dict:
-    nodes_path = (state.out_dir / "nodes.json").resolve()
-    structure_path = (state.out_dir / "filestructure.json").resolve()
+    nodes_path = (state.repo_dir / "nodes.json").resolve()
+    structure_path = (state.repo_dir / "filestructure.json").resolve()
 
     if not nodes_path.exists():
         raise RuntimeError("nodes.json not found. Call POST /nodes first.")
@@ -334,8 +334,15 @@ def run_summary_pipeline() -> dict:
     nodes: list[dict] = json.loads(nodes_path.read_text(encoding="utf-8"))["nodes"]
     structure: dict = json.loads(structure_path.read_text(encoding="utf-8"))
 
+    def _set_progress(done: int, total: int) -> None:
+        state.pipeline_progress = {"phase": "summary", "done": done, "total": max(total, 1)}
+
+    pending_nodes = [n for n in nodes if not n.get("summary") and should_summarize_node(n)]
+
     logger.info("Summary Stage 1: LLM node summaries")
+    _set_progress(0, len(pending_nodes))
     _stage1_summarize_nodes(nodes)
+    _set_progress(sum(1 for n in nodes if n.get("summary")), len(nodes))
     nodes_path.write_text(json.dumps({"nodes": nodes}, indent=2), encoding="utf-8")
 
     logger.info("Summary Stage 2: LLM file summaries (batched)")
@@ -348,6 +355,7 @@ def run_summary_pipeline() -> dict:
     structure_path.write_text(json.dumps(structure, indent=2), encoding="utf-8")
 
     summarized_nodes = sum(1 for n in nodes if n.get("summary"))
+    state.pipeline_progress = {"phase": "summary", "done": len(nodes), "total": len(nodes)}
     logger.info(
         "Summary pipeline complete: %d/%d nodes summarized, root summary length %d",
         summarized_nodes, len(nodes), len(structure.get("summary", "")),

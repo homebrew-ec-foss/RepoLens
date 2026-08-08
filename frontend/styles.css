@@ -1528,6 +1528,129 @@ textarea.input {
 
 .chat-citation:hover { background: var(--accent-muted); color: var(--accent); }
 
+/* ─── Chat Markdown ───────────────────────────────────────────── */
+.chat-bubble h1, .chat-bubble h2, .chat-bubble h3, .chat-bubble h4 {
+  font-family: var(--font-sans);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  color: var(--text-primary);
+  margin: var(--s-5) 0 var(--s-2);
+}
+
+.chat-bubble h1 { font-size: var(--text-xl); }
+.chat-bubble h2 { font-size: var(--text-lg); }
+.chat-bubble h3 { font-size: var(--text-md); }
+.chat-bubble h4 { font-size: var(--text-sm); }
+
+.chat-bubble p { margin: var(--s-2) 0; color: var(--text-primary); }
+.chat-bubble p:first-child, .chat-bubble h1:first-child, .chat-bubble h2:first-child,
+.chat-bubble h3:first-child, .chat-bubble h4:first-child,
+.chat-bubble ul:first-child, .chat-bubble ol:first-child { margin-top: 0; }
+
+.chat-bubble a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.chat-bubble a:hover { color: var(--accent-hover); }
+
+.chat-bubble ul, .chat-bubble ol {
+  margin: var(--s-2) 0;
+  padding-left: var(--s-6);
+  color: var(--text-primary);
+}
+.chat-bubble li { margin: var(--s-1) 0; }
+.chat-bubble li > p { margin: var(--s-1) 0; }
+.chat-bubble ul ul, .chat-bubble ol ol, .chat-bubble ul ol, .chat-bubble ol ul { margin: 0; }
+
+.chat-bubble blockquote {
+  margin: var(--s-3) 0;
+  padding: var(--s-2) var(--s-4);
+  border-left: 2px solid var(--border-strong);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  background: var(--bg-input);
+  color: var(--text-secondary);
+}
+.chat-bubble blockquote p { margin: var(--s-1) 0; }
+
+.chat-bubble table {
+  border-collapse: collapse;
+  margin: var(--s-3) 0;
+  width: 100%;
+  font-size: var(--text-sm);
+}
+.chat-bubble th, .chat-bubble td {
+  border: 1px solid var(--border-default);
+  padding: var(--s-2) var(--s-3);
+  text-align: left;
+}
+.chat-bubble th { background: var(--bg-input); color: var(--text-primary); font-weight: var(--weight-medium); }
+
+/* Inline code (do not style code inside rendered blocks) */
+.chat-bubble :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  background: var(--bg-root);
+  border: 1px solid var(--border-subtle);
+  padding: 1px var(--s-1);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+}
+
+/* Fenced / indented code blocks */
+.chat-bubble .code-block {
+  margin: var(--s-3) 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-root);
+  overflow: hidden;
+}
+
+.chat-bubble .code-block-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s-2);
+  padding: 4px var(--s-3);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-input);
+}
+
+.chat-bubble .code-block-pre {
+  margin: 0;
+  padding: var(--s-3);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--leading-relaxed);
+  white-space: pre;
+  tab-size: 4;
+  border: none;
+  border-radius: 0;
+  background: none;
+}
+
+.chat-bubble .code-block-pre code {
+  display: block;
+  padding: 0;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--text-primary);
+}
+
+/* Lightweight highlight.js palette matching the RepoLens theme */
+.chat-bubble .hljs { color: var(--text-primary); background: transparent; }
+.chat-bubble .hljs-comment, .chat-bubble .hljs-quote { color: #6f6f6f; font-style: italic; }
+.chat-bubble .hljs-keyword, .chat-bubble .hljs-selector-tag, .chat-bubble .hljs-meta,
+.chat-bubble .hljs-doctag, .chat-bubble .hljs-tag { color: #d7a94b; }
+.chat-bubble .hljs-string, .chat-bubble .hljs-attr, .chat-bubble .hljs-regexp { color: #9cbf77; }
+.chat-bubble .hljs-number, .chat-bubble .hljs-literal, .chat-bubble .hljs-symbol { color: #b795f2; }
+.chat-bubble .hljs-title, .chat-bubble .hljs-title.function_, .chat-bubble .hljs-section,
+.chat-bubble .hljs-type { color: #7db2e8; }
+.chat-bubble .hljs-built_in, .chat-bubble .hljs-params, .chat-bubble .hljs-variable,
+.chat-bubble .hljs-template-variable, .chat-bubble .hljs-property, .chat-bubble .hljs-name { color: #cbb2e2; }
+.chat-bubble .hljs-operator, .chat-bubble .hljs-punctuation, .chat-bubble .hljs-meta .hljs-keyword { color: #b9b9b9; }
+.chat-bubble .hljs-deletion { color: #e08a8a; }
+.chat-bubble .hljs-addition { color: #9cbf77; }
+
 @keyframes messageIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
 .chat-empty {
@@ -2018,6 +2141,17 @@ textarea.input {
 
 .pl-progress-fill-accent {
   background-color: var(--accent);
+}
+
+.pl-progress-fill-active {
+  background-image: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  background-size: 200% 100%;
+  animation: pl-shimmer 1.4s infinite linear;
+}
+
+@keyframes pl-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
 }
 
 svg { vertical-align: middle; flex-shrink: 0; }

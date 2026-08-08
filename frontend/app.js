@@ -308,7 +308,7 @@ function renderSetup() {
   },
     el('div', { class: 'setup-option-icon', html: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>` }),
     el('div', { class: 'setup-option-title' }, 'Local AI'),
-    el('div', { class: 'setup-option-desc' }, 'Run models locally with Ollama. Private, offline-capable.'),
+    el('div', { class: 'setup-option-desc' }, 'Embeddings and vector search run locally on your machine.'),
   );
 
   options.appendChild(cloudOption);
@@ -407,16 +407,16 @@ function renderSetupLocal() {
   inner.appendChild(steps);
 
   const header = el('div', { class: 'setup-header' });
-  header.appendChild(el('h1', {}, 'Local AI Setup'));
-  header.appendChild(el('p', {}, 'Run models locally with Ollama'));
+  header.appendChild(el('h1', {}, 'Local AI Components'));
+  header.appendChild(el('p', {}, 'RepoLens indexes code on your machine; the generative LLM runs via the Gemini API.'));
   inner.appendChild(header);
 
   const reqs = el('div', { class: 'requirements-list' });
   const requirements = [
-    { icon: Icons.settings, text: 'Dedicated GPU with minimum 6 GB VRAM', status: 'info' },
-    { icon: Icons.folder, text: 'Ollama installed and on PATH', status: 'info' },
-    { icon: Icons.plus, text: 'Ollama server running (ollama serve)', status: 'info' },
-    { icon: Icons.repo, text: 'At least one model pulled (e.g. llama3)', status: 'info' },
+    { icon: Icons.settings, text: 'Embedding model (gte-modernbert-base) runs locally via sentence-transformers on CPU', status: 'info' },
+    { icon: Icons.folder, text: 'Qdrant vector database stored locally under out/qdrant_db', status: 'info' },
+    { icon: Icons.plus, text: 'Embedding model weights cached under ./models', status: 'info' },
+    { icon: Icons.repo, text: 'The LLM itself is cloud-hosted via the Gemini API (requires an API key)', status: 'info' },
   ];
 
   for (const r of requirements) {
@@ -429,13 +429,13 @@ function renderSetupLocal() {
 
   const notice = el('div', { class: 'warning-banner', style: { marginTop: '24px' } },
     el('span', { html: Icons.info }),
-    el('span', {}, 'Local AI backend integration is coming soon. For now, please use Cloud AI with a Gemini API key.'),
+    el('span', {}, 'No separate local LLM runtime is required. Set up the Gemini API key to start analyzing repositories.'),
   );
   inner.appendChild(notice);
 
   const actions = el('div', { class: 'modal-actions', style: { justifyContent: 'space-between', marginTop: '24px' } });
   actions.appendChild(el('button', { class: 'btn btn-ghost', onClick: () => navigate('setup') }, 'Back'));
-  actions.appendChild(el('button', { class: 'btn btn-primary btn-lg', onClick: () => navigate('setup-cloud') }, 'Use Cloud AI Instead'));
+  actions.appendChild(el('button', { class: 'btn btn-primary btn-lg', onClick: () => navigate('setup-cloud') }, 'Set Up Gemini API'));
   inner.appendChild(actions);
 
   container.appendChild(inner);
@@ -609,7 +609,7 @@ function renderHome() {
   // Quick actions
   const actions = el('div', { class: 'home-actions' });
   actions.appendChild(makeAction(Icons.plus, 'Add Repository', 'GitHub or local folder', () => openAddRepoModal()));
-  actions.appendChild(makeAction(Icons.settings, 'Settings', 'AI provider & config', () => navigate('settings')));
+  actions.appendChild(makeAction(Icons.settings, 'Settings', 'LLM, embedding & retrieval config', () => navigate('settings')));
   if (state.activeRepo) {
     actions.appendChild(makeAction(Icons.search, 'Summaries', state.activeRepo.name, () => navigate('explorer')));
     actions.appendChild(makeAction(Icons.chat, 'Chat', 'Query your code', () => navigate('chat')));
@@ -752,26 +752,18 @@ function renderGitHubTab() {
   actions.appendChild(el('button', { class: 'btn btn-secondary', onClick: closeModal }, 'Cancel'));
   const cloneBtn = el('button', {
     class: 'btn btn-primary',
-    onClick: async () => {
+    onClick: () => {
       const url = input.value.trim();
       if (!url || !url.includes('github.com')) {
         toast('Please enter a valid GitHub URL', 'error');
         return;
       }
-      cloneBtn.disabled = true;
-      cloneBtn.textContent = 'Cloning...';
-      try {
-        const match = url.match(/github\.com\/([^/]+)\/([^/\s?.]+)/);
-        await api('/repo', { method: 'POST', body: { github_url: url } });
+      const match = url.match(/github\.com\/([^/]+)\/([^/\s?.]+)/);
+      if (match) {
         state.activeRepo = { owner: match[1], name: match[2].replace(/\.git$/, ''), path: '' };
-        closeModal();
-        await loadRepos();
-        startPipeline();
-      } catch (err) {
-        toast(err.message, 'error');
-        cloneBtn.disabled = false;
-        cloneBtn.textContent = 'Clone & Parse';
       }
+      closeModal();
+      startPipeline({ cloneUrl: url });
     },
   }, 'Clone & Parse');
   actions.appendChild(cloneBtn);
@@ -834,33 +826,65 @@ function renderLocalTab() {
 // ─── Pipeline ───────────────────────────────────────────────────
 
 const PIPELINE_STAGES = [
+  { id: 'clone', label: 'Cloning Repository' },
   { id: 'parse', label: 'Parsing Codebase' },
   { id: 'summary', label: 'Generating AI Summaries' },
   { id: 'embeddings', label: 'Generating Embeddings' },
   { id: 'index', label: 'Indexing Vectors' }
 ];
 
+const PL_BARS = [
+  { key: 'clone', label: 'Clone', fill: 'pl-progress-fill', stage: 'clone' },
+  { key: 'tree', label: 'Tree Parsing', fill: 'pl-progress-fill', stage: 'parse' },
+  { key: 'node', label: 'Nodes & Edges', fill: 'pl-progress-fill pl-progress-fill-accent', stage: 'parse' },
+  { key: 'sum', label: 'Summaries', fill: 'pl-progress-fill pl-progress-fill-accent', stage: 'summary' },
+  { key: 'embed', label: 'Embeddings', fill: 'pl-progress-fill pl-progress-fill-accent', stage: 'embeddings,index' },
+];
+
 let pipelineStartTime = null;
 let pipelinePoller = null;
 let pipelineData = null;
+let pipelineCloneUrl = null;
 
-async function startPipeline() {
+async function startPipeline(opts = {}) {
+  const { cloneUrl } = opts;
+  pipelineCloneUrl = cloneUrl || null;
   pipelineStartTime = Date.now();
-  pipelineData = { stage: 'tree', elapsed: 0, error: null, stage_index: 0, logs: [] };
+  pipelineData = {
+    stage_index: 0,
+    stages: cloneUrl ? ['clone', 'parse', 'summary', 'embeddings', 'index']
+                     : ['parse', 'summary', 'embeddings', 'index'],
+    elapsed: 0,
+    error: null,
+    logs: [],
+    bars: { clone: 0, tree: 0, node: 0, sum: 0, embed: 0 },
+    prog: null,
+  };
+  pipelineData.stage = pipelineData.stages[0];
   state.pipelineStage = 0;
   state.pipelineError = null;
   navigate('pipeline');
 
   if (pipelinePoller) clearInterval(pipelinePoller);
-  pipelinePoller = setInterval(() => {
+  pipelinePoller = setInterval(async () => {
     if (pipelineData && !pipelineData.error && pipelineData.stage !== 'done') {
       pipelineData.elapsed = Math.floor((Date.now() - pipelineStartTime) / 1000);
+      let p = null;
+      try { p = await api('/pipeline/progress'); } catch (e) { /* transient — ignore while work runs */ }
+      if (p && p.phase && p.total > 0) {
+        const pct = Math.min(100, Math.round((p.done / p.total) * 100));
+        if (p.phase === 'tree') pipelineData.bars.tree = pct;
+        else if (p.phase === 'summary') pipelineData.bars.sum = pct;
+        else if (p.phase === 'embedding' || p.phase === 'upserting') pipelineData.bars.embed = pct;
+        pipelineData.prog = p;
+      }
       updatePipeline(pipelineData);
     }
   }, 1000);
 
-  const log = (msg) => { 
-    pipelineData.logs.push(msg); 
+  const log = (msg) => {
+    pipelineData.logs = pipelineData.logs || [];
+    pipelineData.logs.push(msg);
     const logContent = document.getElementById('pl-log-content');
     if (logContent) {
       logContent.appendChild(el('div', { class: 'pl-log-entry' }, msg));
@@ -868,58 +892,58 @@ async function startPipeline() {
     }
   };
 
+  const setStage = (i) => {
+    pipelineData.stage_index = i;
+    pipelineData.stage = pipelineData.stages[i];
+    updatePipeline(pipelineData);
+  };
+
+  const parseOffset = cloneUrl ? 1 : 0;
+
   try {
-    pipelineData.stage_index = 0; pipelineData.stage = 'parse'; updatePipeline(pipelineData);
+    if (cloneUrl) {
+      setStage(0);
+      log('Cloning repository...');
+      await api('/repo', { method: 'POST', body: { github_url: cloneUrl } });
+      pipelineData.bars.clone = 100;
+      updatePipeline(pipelineData);
+    }
+
+    setStage(parseOffset);
     log('Starting Tree Sitter parsing...');
     await api('/tree', { method: 'POST' });
+    pipelineData.bars.tree = 100;
+    updatePipeline(pipelineData);
+
     log('Extracting Nodes...');
     await api('/nodes', { method: 'POST' });
     log('Extracting Edges...');
     await api('/edges', { method: 'POST' });
-    
-    pipelineData.stage_index = 1; pipelineData.stage = 'summary'; updatePipeline(pipelineData);
+    pipelineData.bars.node = 100;
+    updatePipeline(pipelineData);
+
+    setStage(parseOffset + 1);
     log('Generating AI Summaries...');
     const summaryRes = await api('/summary', { method: 'POST' });
+    pipelineData.bars.sum = 100;
     pipelineData.summaries_completed = summaryRes.summaries_completed ?? 0;
-    
-    pipelineData.stage_index = 2; pipelineData.stage = 'embeddings'; updatePipeline(pipelineData);
+    updatePipeline(pipelineData);
+
+    setStage(parseOffset + 2);
     log('Generating Embeddings...');
+    await api('/index', { method: 'POST' });
+    pipelineData.bars.embed = 100;
+    updatePipeline(pipelineData);
 
-    let embedPoller = null;
-    try {
-      const indexPromise = api('/index', { method: 'POST' });
+    setStage(parseOffset + 3);
+    log('Indexing done. Finalizing...');
 
-      embedPoller = setInterval(async () => {
-        try {
-          const p = await api('/pipeline/progress');
-          if (p && p.total > 0) {
-            const pct = Math.min(100, Math.round((p.done / p.total) * 100));
-            pipelineData.embedPct = pct;
-            pipelineData.embedDetail = `${p.done}/${p.total}`;
-            updatePipeline(pipelineData);
-          }
-        } catch (e) { /* transient — ignore while index is running */ }
-      }, 700);
-
-      await indexPromise;
-      clearInterval(embedPoller);
-      embedPoller = null;
-      pipelineData.embedPct = 100;
-      pipelineData.embedDetail = `${pipelineData.embedDetail || 'done'}`;
-      updatePipeline(pipelineData);
-    } finally {
-      if (embedPoller) { clearInterval(embedPoller); embedPoller = null; }
-    }
-
-    pipelineData.stage_index = 3; pipelineData.stage = 'index'; updatePipeline(pipelineData);
-    log('Indexing Vectors...');
-
-    pipelineData.stage_index = 4; pipelineData.stage = 'done'; updatePipeline(pipelineData);
+    setStage(pipelineData.stages.length - 1);
     log('Pipeline completed successfully!');
-    
+
     clearInterval(pipelinePoller);
     pipelinePoller = null;
-    
+
     try {
       state.structure = await api('/data/filestructure.json');
       state.nodes = await api('/data/nodes.json');
@@ -930,13 +954,12 @@ async function startPipeline() {
       pipelineData.nodes_discovered = summaryStats.nodes;
       pipelineData.files_processed = summaryStats.files;
       if (pipelineData.summaries_completed === 0) pipelineData.summaries_completed = summaryStats.summarized;
-    } catch(e) {
+    } catch (e) {
       console.error("Failed to load parsed data", e);
     }
-    
+
     render();
     setTimeout(() => navigate('completion'), 600);
-    
   } catch (err) {
     pipelineData.error = err.message;
     state.pipelineError = err.message;
@@ -963,7 +986,7 @@ function renderPipeline() {
   const root = el('div', { class: 'pipeline' });
 
   const top = el('div', { class: 'pipeline-top' });
-  top.appendChild(el('span', { class: 'pipeline-top-title' }, 'Parsing Repository'));
+  top.appendChild(el('span', { class: 'pipeline-top-title' }, 'Processing Repository'));
   const elapsed = el('span', { class: 'pipeline-top-elapsed', id: 'pl-elapsed' }, fmtElapsed(d.elapsed));
   top.appendChild(elapsed);
   root.appendChild(top);
@@ -971,15 +994,16 @@ function renderPipeline() {
   const errBanner = el('div', { class: 'pl-error', id: 'pl-error', style: { display: d.error ? 'flex' : 'none' } });
   errBanner.appendChild(el('span', { html: Icons.x }));
   errBanner.appendChild(el('span', { id: 'pl-error-text' }, d.error || ''));
-  errBanner.appendChild(el('button', { class: 'btn btn-secondary', style: { marginLeft: 'auto' }, onClick: () => startPipeline() }, 'Retry'));
+  errBanner.appendChild(el('button', { class: 'btn btn-secondary', style: { marginLeft: 'auto' }, onClick: () => startPipeline(pipelineCloneUrl ? { cloneUrl: pipelineCloneUrl } : {}) }, 'Retry'));
   root.appendChild(errBanner);
 
   const body = el('div', { class: 'pipeline-body' });
   const timeline = el('div', { class: 'pl-timeline' });
-  
+
+  const stages = d.stages || ['parse', 'summary', 'embeddings', 'index'];
   const stageIndex = d.stage_index ?? state.pipelineStage ?? 0;
-  for (let i = 0; i < PIPELINE_STAGES.length; i++) {
-    const s = PIPELINE_STAGES[i];
+  for (let i = 0; i < stages.length; i++) {
+    const spec = PIPELINE_STAGES.find((s) => s.id === stages[i]) || { id: stages[i], label: stages[i] };
     let cls = 'pending';
     if (i < stageIndex) cls = 'completed';
     else if (i === stageIndex && !d.error) cls = 'active';
@@ -993,7 +1017,7 @@ function renderPipeline() {
     stage.appendChild(track);
 
     const cnt = el('div', { class: 'pl-stage-content' });
-    cnt.appendChild(el('div', { class: 'pl-stage-label' }, s.label));
+    cnt.appendChild(el('div', { class: 'pl-stage-label' }, spec.label));
 
     const sub = el('div', { class: 'pl-stage-sub', id: `pl-sub-${i}` });
     if (cls === 'active') sub.textContent = 'processing...';
@@ -1006,49 +1030,19 @@ function renderPipeline() {
   const right = el('div', { class: 'pl-right' });
   const progressBars = el('div', { class: 'pl-progress-section' });
 
-  // 1. Tree Parse Bar
-  const treeGroup = el('div', { class: 'pl-progress-group' });
-  const treeHeader = el('div', { class: 'pl-progress-header' });
-  treeHeader.appendChild(el('span', {}, 'Tree Parsing'));
-  treeHeader.appendChild(el('span', { id: 'pb-tree-pct' }, '0%'));
-  treeGroup.appendChild(treeHeader);
-  const treeBar = el('div', { class: 'pl-progress-track' });
-  treeBar.appendChild(el('div', { class: 'pl-progress-fill', id: 'pb-tree-fill', style: { width: '0%', transition: 'width 0.3s ease' } }));
-  treeGroup.appendChild(treeBar);
-  progressBars.appendChild(treeGroup);
-
-  // 2. Node & Edge Bar
-  const nodeGroup = el('div', { class: 'pl-progress-group' });
-  const nodeHeader = el('div', { class: 'pl-progress-header' });
-  nodeHeader.appendChild(el('span', {}, 'Nodes & Edges'));
-  nodeHeader.appendChild(el('span', { id: 'pb-node-pct' }, '0%'));
-  nodeGroup.appendChild(nodeHeader);
-  const nodeBar = el('div', { class: 'pl-progress-track' });
-  nodeBar.appendChild(el('div', { class: 'pl-progress-fill pl-progress-fill-accent', id: 'pb-node-fill', style: { width: '0%', transition: 'width 0.3s ease' } }));
-  nodeGroup.appendChild(nodeBar);
-  progressBars.appendChild(nodeGroup);
-
-  // 3. Summaries Bar
-  const sumGroup = el('div', { class: 'pl-progress-group' });
-  const sumHeader = el('div', { class: 'pl-progress-header' });
-  sumHeader.appendChild(el('span', {}, 'Summaries'));
-  sumHeader.appendChild(el('span', { id: 'pb-sum-pct' }, '0%'));
-  sumGroup.appendChild(sumHeader);
-  const sumBar = el('div', { class: 'pl-progress-track' });
-  sumBar.appendChild(el('div', { class: 'pl-progress-fill pl-progress-fill-accent', id: 'pb-sum-fill', style: { width: '0%', transition: 'width 0.3s ease' } }));
-  sumGroup.appendChild(sumBar);
-  progressBars.appendChild(sumGroup);
-
-  // 4. Embeddings Bar
-  const embedGroup = el('div', { class: 'pl-progress-group' });
-  const embedHeader = el('div', { class: 'pl-progress-header' });
-  embedHeader.appendChild(el('span', {}, 'Embeddings'));
-  embedHeader.appendChild(el('span', { id: 'pb-embed-pct' }, '0%'));
-  embedGroup.appendChild(embedHeader);
-  const embedBar = el('div', { class: 'pl-progress-track' });
-  embedBar.appendChild(el('div', { class: 'pl-progress-fill pl-progress-fill-accent', id: 'pb-embed-fill', style: { width: '0%', transition: 'width 0.3s ease' } }));
-  embedGroup.appendChild(embedBar);
-  progressBars.appendChild(embedGroup);
+  const hasCloneStage = stages.indexOf('clone') !== -1;
+  for (const cfg of PL_BARS) {
+    if (cfg.key === 'clone' && !hasCloneStage) continue;
+    const group = el('div', { class: 'pl-progress-group' });
+    const header = el('div', { class: 'pl-progress-header' });
+    header.appendChild(el('span', {}, cfg.label));
+    header.appendChild(el('span', { id: `pb-${cfg.key}-pct` }, '0%'));
+    group.appendChild(header);
+    const bar = el('div', { class: 'pl-progress-track' });
+    bar.appendChild(el('div', { class: cfg.fill, id: `pb-${cfg.key}-fill`, style: { width: '0%', transition: 'width 0.3s ease' } }));
+    group.appendChild(bar);
+    progressBars.appendChild(group);
+  }
 
   right.appendChild(progressBars);
 
@@ -1072,12 +1066,14 @@ function renderPipeline() {
 
 function updatePipeline(d) {
   if (!d) return;
+  const stages = d.stages || ['parse', 'summary', 'embeddings', 'index'];
   const stageIndex = d.stage_index ?? state.pipelineStage ?? 0;
+  const currentStage = d.stage || stages[stageIndex];
 
   const elElapsed = document.getElementById('pl-elapsed');
   if (elElapsed) elElapsed.textContent = fmtElapsed(d.elapsed);
 
-  for (let i = 0; i < PIPELINE_STAGES.length; i++) {
+  for (let i = 0; i < stages.length; i++) {
     const stageEl = document.getElementById(`pl-stage-${i}`);
     const dot = document.getElementById(`pl-dot-${i}`);
     const sub = document.getElementById(`pl-sub-${i}`);
@@ -1088,38 +1084,38 @@ function updatePipeline(d) {
     else if (i === stageIndex && !d.error) cls = 'active';
 
     stageEl.className = `pl-stage ${cls}`;
-    if (cls === 'completed') dot.innerHTML = Icons.check; else dot.innerHTML = '';
-    if (cls === 'active') {
-      sub.textContent = (i === 2 && d.embedPct != null) ? `${d.embedPct}%` : 'processing...';
-    } else if (cls === 'completed') sub.textContent = 'done';
+    dot.innerHTML = cls === 'completed' ? Icons.check : '';
+    if (cls === 'active') sub.textContent = 'processing...';
+    else if (cls === 'completed') sub.textContent = 'done';
     else sub.textContent = '';
   }
 
-  // Calculate percentages based on stage_index
-  // stage_index 1 = tree (0->100)
-  // stage_index 2 = nodes (0->100)
-  // stage_index 3 = summaries (0->100)
-  
-  let treePct = stageIndex > 1 ? 100 : (stageIndex === 1 ? 50 : 0);
-  let nodePct = stageIndex > 2 ? 100 : (stageIndex === 2 ? 50 : 0);
-  let sumPct = stageIndex > 3 ? 100 : (stageIndex === 3 ? 50 : 0);
+  const bars = d.bars || {}; // values 0..100 mapped from real backend progress
+  for (const cfg of PL_BARS) {
+    const pctEl = document.getElementById(`pb-${cfg.key}-pct`);
+    const fillEl = document.getElementById(`pb-${cfg.key}-fill`);
+    if (!pctEl || !fillEl) continue;
 
-  const pbTreePct = document.getElementById('pb-tree-pct');
-  const pbTreeFill = document.getElementById('pb-tree-fill');
-  if (pbTreePct && pbTreeFill) { pbTreePct.textContent = `${treePct}%`; pbTreeFill.style.width = `${treePct}%`; }
+    const val = Math.max(0, Math.min(100, Math.round(bars[cfg.key] ?? 0)));
+    pctEl.textContent = `${val}%`;
+    fillEl.style.width = `${val}%`;
 
-  const pbNodePct = document.getElementById('pb-node-pct');
-  const pbNodeFill = document.getElementById('pb-node-fill');
-  if (pbNodePct && pbNodeFill) { pbNodePct.textContent = `${nodePct}%`; pbNodeFill.style.width = `${nodePct}%`; }
+    const activeStages = (cfg.stage || '').split(',') || [];
+    const isActive = activeStages.indexOf(currentStage) !== -1;
+    fillEl.classList.toggle('pl-progress-fill-active', isActive && val === 0);
+  }
 
-  const pbSumPct = document.getElementById('pb-sum-pct');
-  const pbSumFill = document.getElementById('pb-sum-fill');
-  if (pbSumPct && pbSumFill) { pbSumPct.textContent = `${sumPct}%`; pbSumFill.style.width = `${sumPct}%`; }
-
-  const embedPct = d.embedPct != null ? Math.min(100, d.embedPct) : (stageIndex > 3 ? 100 : 0);
-  const pbEmbedPct = document.getElementById('pb-embed-pct');
-  const pbEmbedFill = document.getElementById('pb-embed-fill');
-  if (pbEmbedPct && pbEmbedFill) { pbEmbedPct.textContent = `${embedPct}%`; pbEmbedFill.style.width = `${embedPct}%`; }
+  // Reflect real backend phase progress inside the matching active stage label
+  const phaseToStage = { tree: 'parse', summary: 'summary', embedding: 'embeddings', upserting: 'index' };
+  if (d.prog && d.prog.phase && d.prog.total > 0) {
+    const progPct = Math.min(100, Math.round((d.prog.done / d.prog.total) * 100));
+    const stageId = phaseToStage[d.prog.phase];
+    const idx = stages.indexOf(stageId);
+    if (stageId && idx !== -1 && idx === stageIndex) {
+      const sub = document.getElementById(`pl-sub-${stageIndex}`);
+      if (sub) sub.textContent = `${progPct}%`;
+    }
+  }
 }
 
 // ─── Completion ─────────────────────────────────────────────────
@@ -1432,8 +1428,8 @@ function renderChatMessage(msg) {
     if (ref && ref.id) refsById[ref.id] = ref;
   }
 
-  // Simple markdown-ish rendering with clickable node citations
-  bubble.innerHTML = formatChatContent(msg.content, refsById);
+  // Render the LLM markdown output with clickable node citations
+  bubble.innerHTML = renderMarkdown(msg.content, refsById);
   for (const cit of $$('.chat-citation', bubble)) {
     cit.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1459,21 +1455,100 @@ function renderChatMessage(msg) {
   return wrapper;
 }
 
-function formatChatContent(text, refsById) {
-  if (!text) return '';
-  let escaped = text
+// ─── Markdown rendering for chat answers ────────────────────────
+function escapeHtml(str) {
+  return String(str ?? '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/\[([A-Za-z0-9_-]+)\]/g, (m, id) => {
-      if (refsById && refsById[id]) {
-        return `<span class="chat-citation" data-node-id="${id}" title="View node ${id}">${id}</span>`;
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// Node references for the message currently being rendered, so the citation
+// tokenizer can resolve node ids against the backend-provided references.
+let activeChatRefs = null;
+
+const citationExtension = {
+  name: 'citation',
+  level: 'inline',
+  start(src) { return src.indexOf('['); },
+  tokenizer(src) {
+    const match = /^\[([A-Za-z0-9_-]+)\](?!\()/.exec(src);
+    if (!match) return undefined;
+    const id = match[1];
+    if (!activeChatRefs || !activeChatRefs[id]) return undefined;
+    return { type: 'citation', raw: match[0], id };
+  },
+  renderer(token) {
+    return `<span class="chat-citation" data-node-id="${token.id}" title="Open node ${token.id}">${token.id}</span>`;
+  },
+};
+
+function safeHref(href) {
+  if (!href) return '';
+  if (/^(https?:|mailto:)/i.test(href)) return href;
+  if (href.startsWith('#') || href.startsWith('/')) return href;
+  return '';
+}
+
+function renderCodeBlock(codeText, langRaw) {
+  let code = codeText || '';
+  if (code.length > 1 && code.endsWith('\n')) code = code.slice(0, -1);
+  const lang = (langRaw || '').trim().toLowerCase().split(/\s+/)[0];
+  let body;
+  try {
+    if (window.hljs) {
+      if (lang && hljs.getLanguage(lang)) {
+        body = hljs.highlight(code, { language: lang, ignoreIllegals: true }).value;
+      } else {
+        body = hljs.highlightAuto(code).value;
       }
-      return m;
+    }
+  } catch (err) { /* degrade to plain escaped code below */ }
+  if (!body) body = escapeHtml(code);
+  const langLabel = lang ? `<span class="code-lang-badge">${escapeHtml(lang)}</span>` : '';
+  const codeClass = lang ? ` class="hljs language-${escapeHtml(lang)}"` : '';
+  return `<div class="code-block">` +
+    (lang ? `<div class="code-block-bar">${langLabel}</div>` : '') +
+    `<pre class="code-block-pre"><code${codeClass}>${body}</code></pre>` +
+    `</div>`;
+}
+
+let markdownReady = false;
+function initMarkdown() {
+  if (markdownReady || !window.marked) return;
+  try {
+    window.marked.use({
+      gfm: true,
+      breaks: true,
+      extensions: [citationExtension],
+      renderer: {
+        // Never let an LLM answer inject raw HTML into the application UI.
+        html() { return ''; },
+        link(href, title, text) {
+          const safe = safeHref(href || '');
+          if (!safe) return text || '';
+          const titleAttr = title ? ` title="${escapeHtml(title)}"` : '';
+          return `<a href="${escapeHtml(safe)}" target="_blank" rel="noopener noreferrer"${titleAttr}>${text || ''}</a>`;
+        },
+        image() { return ''; },
+        code(code, lang) { return renderCodeBlock(code, lang); },
+      },
     });
-  return escaped
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/^---$/gm, '<hr>')
-    .replace(/\n/g, '<br>');
+    markdownReady = true;
+  } catch (err) {
+    console.error('Failed to initialize Markdown renderer', err);
+  }
+}
+
+function renderMarkdown(text, refsById) {
+  if (!text) return '';
+  initMarkdown();
+  activeChatRefs = refsById || {};
+  if (markdownReady) {
+    try { return window.marked.parse(text); }
+    catch (err) { console.error('Markdown render failed', err); }
+  }
+  // Fallback without the library: safely escape and preserve line breaks.
+  return `<p>${String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')}</p>`;
 }
 
 function openNodeRef(ref) {
@@ -1544,16 +1619,24 @@ async function sendChat(query) {
 function renderSettings() {
   const settings = el('div', { class: 'settings content-centered' });
 
-  // AI Provider
+  // LLM & Retrieval
   const aiSection = el('div', { class: 'settings-section' });
   aiSection.appendChild(el('div', { class: 'settings-section-title' }, 'AI Configuration'));
 
-  aiSection.appendChild(makeSettingsRow('Provider', state.config?.provider === 'cloud' ? 'Cloud (Gemini)' : 'Local (Ollama)',
-    el('span', { class: 'badge badge-accent' }, state.config?.provider || 'cloud'),
+  aiSection.appendChild(makeSettingsRow('LLM Provider', 'Google Gemini via Google AI API',
+    el('span', { class: 'badge badge-accent' }, state.config?.provider || 'Gemini'),
   ));
 
-  aiSection.appendChild(makeSettingsRow('Model', state.config?.model || 'gemini-3.1-flash-lite',
-    el('span', { class: 'text-sm font-mono' }, state.config?.model || '—'),
+  aiSection.appendChild(makeSettingsRow('LLM Model', state.config?.model || 'gemini-3.1-flash-lite',
+    el('span', { class: 'text-sm font-mono' }, state.config?.model || 'gemini-3.1-flash-lite'),
+  ));
+
+  aiSection.appendChild(makeSettingsRow('Embedding Model', 'Local sentence-transformers (CPU)',
+    el('span', { class: 'text-sm font-mono' }, state.config?.embedding_model || 'Alibaba-NLP/gte-modernbert-base'),
+  ));
+
+  aiSection.appendChild(makeSettingsRow('Vector Database', 'Qdrant (embedded local)',
+    el('span', { class: 'text-sm font-mono' }, state.config?.vector_db || 'Qdrant (embedded local)'),
   ));
 
   aiSection.appendChild(makeSettingsRow('API Key', state.config?.api_key_set ? 'Configured' : 'Not set',

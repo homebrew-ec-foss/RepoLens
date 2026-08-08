@@ -18,7 +18,7 @@ def _read_snippet(path: str, start_line: int, end_line: int) -> str:
 
 
 def _find_node(node_id: str) -> dict | None:
-    nodes_path = (state.out_dir / "nodes.json").resolve()
+    nodes_path = (state.repo_dir / "nodes.json").resolve()
     if not nodes_path.exists():
         return None
     data = json.loads(nodes_path.read_text(encoding="utf-8"))
@@ -29,7 +29,7 @@ def _find_node(node_id: str) -> dict | None:
 
 
 def _find_file_entry(node_id: str) -> dict | None:
-    structure_path = (state.out_dir / "filestructure.json").resolve()
+    structure_path = (state.repo_dir / "filestructure.json").resolve()
     if not structure_path.exists():
         return None
     structure = json.loads(structure_path.read_text(encoding="utf-8"))
@@ -76,7 +76,7 @@ def _resolve_node_path(source_path: str) -> Path:
 
 
 def _load_edges() -> list[dict]:
-    edges_path = (state.out_dir / "edges.json").resolve()
+    edges_path = (state.repo_dir / "edges.json").resolve()
     if not edges_path.exists():
         return []
     try:
@@ -88,7 +88,7 @@ def _load_edges() -> list[dict]:
 
 
 def _load_file_entries() -> dict[str, dict]:
-    structure_path = (state.out_dir / "filestructure.json").resolve()
+    structure_path = (state.repo_dir / "filestructure.json").resolve()
     if not structure_path.exists():
         return {}
     structure = json.loads(structure_path.read_text(encoding="utf-8"))
