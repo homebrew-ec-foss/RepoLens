@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-os.environ["TORCH_DEVICE"] = "cpu"
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
+import torch
 from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
 
@@ -17,6 +16,14 @@ _CACHE_DIR = "./models"
 _model: SentenceTransformer | None = None
 
 
+def _resolve_device() -> str:
+    if torch.cuda.is_available():
+        return "cuda"
+    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
+
 def _get_model() -> SentenceTransformer:
     global _model
     if _model is None:
@@ -24,7 +31,7 @@ def _get_model() -> SentenceTransformer:
             EMBED_MODEL_NAME,
             cache_folder=_CACHE_DIR,
             local_files_only=True,
-            device="cpu",
+            device=_resolve_device(),
         )
     return _model
 

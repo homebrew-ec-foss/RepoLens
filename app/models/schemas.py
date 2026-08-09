@@ -16,6 +16,11 @@ class RepoRequest(BaseModel):
 class LocalRepoRequest(BaseModel):
     folder_path: str
 
+class OpenRepoRequest(BaseModel):
+    path: str
+    owner: str | None = None
+    name: str | None = None
+
 class ConfigRequest(BaseModel):
     gemini_api_key: str | None = None
     provider: str | None = None
