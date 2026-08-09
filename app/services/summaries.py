@@ -182,18 +182,6 @@ def _summarize_parent_batch(parents: list[dict]) -> dict[str, str]:
     return {}
 
 
-def generate_parent_summary(child_summaries: list[str]) -> str:
-    if not child_summaries:
-        return ""
-    text = "\n".join(s.strip() for s in child_summaries if s and s.strip())
-    if not text:
-        return ""
-    result = _summarize_parent_batch([
-        {"id": "_parent", "name": "", "child_summaries": text},
-    ])
-    return result.get("_parent", "")
-
-
 def _stage1_summarize_nodes(nodes: list[dict]):
     pending = [n for n in nodes if not n.get("summary") and should_summarize_node(n)]
     

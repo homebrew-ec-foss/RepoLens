@@ -42,18 +42,6 @@ class StatusResponse(BaseModel):
     status: str
     detail: str | None = None
 
-class NodeResponse(BaseModel):
-    id: str
-    path: str
-    language: str
-    node_type: str
-    title: str | None
-    start_line: int
-    end_line: int
-    parent_id: str | None
-    children_ids: list[str]
-    summary: str
-
 class QueryRequest(BaseModel):
     query: str
     repo_owner: str | None = None

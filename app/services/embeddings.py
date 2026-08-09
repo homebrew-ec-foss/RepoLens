@@ -5,7 +5,6 @@ import os
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
-import torch
 from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
 
@@ -17,10 +16,6 @@ _model: SentenceTransformer | None = None
 
 
 def _resolve_device() -> str:
-    if torch.cuda.is_available():
-        return "cuda"
-    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-        return "mps"
     return "cpu"
 
 
