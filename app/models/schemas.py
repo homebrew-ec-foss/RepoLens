@@ -16,6 +16,11 @@ class RepoRequest(BaseModel):
 class LocalRepoRequest(BaseModel):
     folder_path: str
 
+class OpenRepoRequest(BaseModel):
+    path: str
+    owner: str | None = None
+    name: str | None = None
+
 class ConfigRequest(BaseModel):
     gemini_api_key: str | None = None
     provider: str | None = None
@@ -36,18 +41,6 @@ class HealthResponse(BaseModel):
 class StatusResponse(BaseModel):
     status: str
     detail: str | None = None
-
-class NodeResponse(BaseModel):
-    id: str
-    path: str
-    language: str
-    node_type: str
-    title: str | None
-    start_line: int
-    end_line: int
-    parent_id: str | None
-    children_ids: list[str]
-    summary: str
 
 class QueryRequest(BaseModel):
     query: str

@@ -2119,6 +2119,18 @@ async function openRepo(repo) {
   state.activeRepo = { owner: repo.owner, name: repo.name, path: repo.path };
 
   try {
+    await api('/repo/open', {
+      method: 'POST',
+      body: { path: repo.path, owner: repo.owner, name: repo.name },
+    });
+  } catch {
+    state.structure = null;
+    state.nodes = null;
+    navigate('home');
+    return;
+  }
+
+  try {
     state.structure = await api('/structure');
   } catch { state.structure = null; }
   try {
