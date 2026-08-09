@@ -1,4 +1,4 @@
-﻿import json
+import json
 import re
 from rank_bm25 import BM25Okapi
 from pathlib import Path
@@ -6,9 +6,16 @@ from google import genai
 from google.genai import types
 from dotenv import load_dotenv
 
-load_dotenv()
-client = genai.Client()
+from app.storage.state import state
 
+load_dotenv()
+_client = None
+
+def _get_client():
+    global _client
+    if _client is None:
+        _client = genai.Client()
+    return _client
 def refine_nodes(query, nodes):
     prompt = f"""
 You are given a user query and a set of candidate code nodes.
@@ -30,7 +37,7 @@ User query:
 Candidate nodes:
 {json.dumps(nodes, ensure_ascii=False, indent=2)}
 """
-    res = client.models.generate_content(
+    res = _get_client().models.generate_content(
         model='gemini-3.1-flash-lite',
         contents=prompt,
         config=types.GenerateContentConfig(response_mime_type='application/json')
@@ -86,7 +93,7 @@ class BM25KeywordSearch:
     def load_file_tree(self):
         if self.file_tree is not None:
             return self.file_tree
-        tree_path = Path(__file__).parent.parent.parent / 'out' / 'filestructure.json'
+        tree_path = state.repo_dir / 'filestructure.json'
         if tree_path.is_file():
             with open(tree_path, 'r', encoding='utf-8') as f:
                 self.file_tree = json.load(f)
@@ -147,19 +154,41 @@ class BM25KeywordSearch:
         children = [self.by_id[cid] for cid in item.get('children_ids', []) if cid in self.by_id]
         return parent, children
 
+_cached_engine = None
+_cached_engine_path = None
+_cached_engine_mtime = None
+
+
+def _get_search_engine(nodes_path: Path) -> BM25KeywordSearch:
+    global _cached_engine, _cached_engine_path, _cached_engine_mtime
+    try:
+        mtime = nodes_path.stat().st_mtime
+    except OSError:
+        mtime = None
+    if (
+        _cached_engine is None
+        or _cached_engine_path != nodes_path
+        or _cached_engine_mtime != mtime
+    ):
+        engine = BM25KeywordSearch(nodes_path, 'title')
+        engine.load_json()
+        engine.build_bm25_index()
+        _cached_engine = engine
+        _cached_engine_path = nodes_path
+        _cached_engine_mtime = mtime
+    return _cached_engine
+
+
+def _nodes_json_path() -> Path:
+    return state.repo_dir / 'nodes.json'
+
 
 def answer_query(query):
-    path = Path(__file__).parent.parent.parent / 'out' / 'nodes.json'
-    obj = BM25KeywordSearch(path, 'title')
-    obj.load_json()
-    obj.build_bm25_index()
+    obj = _get_search_engine(_nodes_json_path())
     return refine_nodes(query, obj.answer_query(query))['res']
 
 def filter_nodes_based_on_type(query, type_filter):
-    path = Path(__file__).parent.parent.parent / 'out' / 'nodes.json'
-    obj = BM25KeywordSearch(path, 'title')
-    obj.load_json()
-    obj.build_bm25_index()
+    obj = _get_search_engine(_nodes_json_path())
     hits = obj.answer_query(query, top_k=50)
     allowed = TYPE_FILTERS.get(type_filter, {type_filter})
     return [item for item in hits if item.get('node_type') in allowed]
@@ -168,10 +197,7 @@ def search_nodes(query):
     if not query or not str(query).strip():
         return []
     type_filter, query_text = parse_type_filter(query)
-    path = Path(__file__).parent.parent.parent / 'out' / 'nodes.json'
-    obj = BM25KeywordSearch(path, 'title')
-    obj.load_json()
-    obj.build_bm25_index()
+    obj = _get_search_engine(_nodes_json_path())
 
     if type_filter and not query_text:
         hits = [

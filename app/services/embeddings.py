@@ -1,58 +1,46 @@
 from __future__ import annotations
 
-import logging
 import os
 
-from dotenv import load_dotenv
-from google import genai
-from google.genai import types
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+os.environ["TORCH_DEVICE"] = "cpu"
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
-load_dotenv()
+from sentence_transformers import SentenceTransformer
+from tqdm import tqdm
 
-logger = logging.getLogger(__name__)
+EMBED_MODEL_NAME = "Alibaba-NLP/gte-modernbert-base"
+EMBED_DIM = 768
+_CACHE_DIR = "./models"
 
-_EMBED_MODEL = os.getenv("REPOLENS_EMBED_MODEL", "gemini-embedding-001")
-EMBED_MODEL_NAME = _EMBED_MODEL
-_EMBED_DIM = 768
-_BATCH_SIZE = 64
-
-_client: genai.Client | None = None
-
-
-def _get_client() -> genai.Client:
-    global _client
-    if _client is None:
-        _client = genai.Client()
-    return _client
+_model: SentenceTransformer | None = None
 
 
-def _embed(contents: list[str], task_type: str) -> list[list[float]]:
-    if not contents:
+def _get_model() -> SentenceTransformer:
+    global _model
+    if _model is None:
+        _model = SentenceTransformer(
+            EMBED_MODEL_NAME,
+            cache_folder=_CACHE_DIR,
+            local_files_only=True,
+            device="cpu",
+        )
+    return _model
+
+
+def embed_texts(texts: list[str], on_progress=None) -> list[list[float]]:
+    if not texts:
         return []
-    client = _get_client()
-    response = client.models.embed_content(
-        model=_EMBED_MODEL,
-        contents=contents,
-        config=types.EmbedContentConfig(
-            output_dimensionality=_EMBED_DIM,
-            task_type=task_type,
-        ),
-    )
-    return [
-        embedding.values
-        for embedding in (response.embeddings or [])
-        if embedding.values is not None
-    ]
-
-
-def embed_texts(texts: list[str]) -> list[list[float]]:
+    model = _get_model()
     vectors: list[list[float]] = []
-    for start in range(0, len(texts), _BATCH_SIZE):
-        batch = texts[start:start + _BATCH_SIZE]
-        vectors.extend(_embed(batch, "RETRIEVAL_DOCUMENT"))
+    for i, text in enumerate(tqdm(texts, desc="Embedding documents", unit="doc")):
+        vectors.append(model.encode(text).tolist())
+        if on_progress is not None:
+            on_progress(i + 1, len(texts))
     return vectors
 
 
 def embed_query(query: str) -> list[float]:
-    vectors = _embed([query], "RETRIEVAL_QUERY")
-    return vectors[0] if vectors else []
+    vector = _get_model().encode(query, prompt_name="query")
+    return vector.tolist()

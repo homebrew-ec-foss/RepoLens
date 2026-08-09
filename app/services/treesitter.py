@@ -18,7 +18,7 @@ IGNORED_DIR_NAMES: frozenset[str] = frozenset({
     ".git", ".hg", ".svn",
     "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache",
     ".venv", "venv", "env",
-    "node_modules", "dist", "build", "out",
+    "node_modules", "dist", "build", "out", "repolens",
     ".idea", ".vscode",
 })
 
@@ -489,11 +489,12 @@ class _Entry:
         if self.entry_type == "file":
             d["node_ids"] = [n["id"] for n in self.raw_nodes]
             # I have embeded raw node metadata so nodes.py can read it without re-parsing.
+            d["nodes"] = self.raw_nodes
         d["children"] = [c.to_dict() for c in self.children]
         return d
 
 
-def _build_file_entry(path: Path, parent_id: str) -> _Entry:
+def _build_file_entry(path: Path, parent_id: str, on_file=None) -> _Entry:
     entry = _Entry(
         id=_new_id(),
         name=path.name,
@@ -504,10 +505,12 @@ def _build_file_entry(path: Path, parent_id: str) -> _Entry:
     lang = _detect_language(path)
     if lang:
         entry.raw_nodes = _extract_raw_nodes(path, lang)
+    if on_file is not None:
+        on_file()
     return entry
 
 
-def _build_dir_entry(path: Path, parent_id: str | None, entry_type: str) -> _Entry:
+def _build_dir_entry(path: Path, parent_id: str | None, entry_type: str, on_file=None) -> _Entry:
     entry = _Entry(
         id=_new_id(),
         name=path.name or str(path),
@@ -525,11 +528,27 @@ def _build_dir_entry(path: Path, parent_id: str | None, entry_type: str) -> _Ent
         if item.name in IGNORED_DIR_NAMES:
             continue
         if item.is_dir():
-            entry.children.append(_build_dir_entry(item, entry.id, "folder"))
+            entry.children.append(_build_dir_entry(item, entry.id, "folder", on_file=on_file))
         elif item.is_file():
-            entry.children.append(_build_file_entry(item, entry.id))
+            entry.children.append(_build_file_entry(item, entry.id, on_file=on_file))
 
     return entry
+
+
+def _count_source_files(root: Path) -> int:
+    total = 0
+    try:
+        items = sorted(root.iterdir(), key=lambda p: (p.is_file(), p.name.lower()))
+    except OSError:
+        return total
+    for item in items:
+        if item.name in IGNORED_DIR_NAMES:
+            continue
+        if item.is_dir():
+            total += _count_source_files(item)
+        elif item.is_file():
+            total += 1
+    return total
 
 def run_treesitter() -> Path:
     if state.repo_path is None:
@@ -537,11 +556,21 @@ def run_treesitter() -> Path:
 
     _reset_ids()
 
-    logger.info("Running tree-sitter on %s", state.repo_path)
-    root_entry = _build_dir_entry(state.repo_path, None, "repository")
+    repo_dir = state.ensure_repo_dir()
+
+    total_files = _count_source_files(state.repo_path)
+    state.pipeline_progress = {"phase": "tree", "done": 0, "total": max(total_files, 1)}
+    processed = {"n": 0}
+
+    def on_file():
+        processed["n"] += 1
+        state.pipeline_progress.update({"phase": "tree", "done": processed["n"]})
+
+    logger.info("Running tree-sitter on %s (%d files)", state.repo_path, total_files)
+    root_entry = _build_dir_entry(state.repo_path, None, "repository", on_file=on_file)
     structure = root_entry.to_dict()
 
-    out_path = (state.out_dir / "filestructure.json").resolve()
+    out_path = (repo_dir / "filestructure.json").resolve()
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(structure, indent=2), encoding="utf-8")
 
@@ -553,8 +582,10 @@ def run_treesitter() -> Path:
 
     state.raw_nodes = all_raw_nodes
 
-    raw_nodes_path = (state.out_dir / ".raw_nodes.json").resolve()
+    raw_nodes_path = (repo_dir / ".raw_nodes.json").resolve()
     raw_nodes_path.write_text(json.dumps(all_raw_nodes, indent=2), encoding="utf-8")
+
+    state.pipeline_progress = {"phase": "tree", "done": max(processed["n"], 1), "total": max(total_files, 1)}
 
     logger.info(
         "filestructure.json written: %d code nodes across the repository", len(all_raw_nodes)

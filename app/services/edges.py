@@ -185,7 +185,7 @@ def _collect_file_entries(entry: dict, acc: list[dict]) -> None:
 
 
 def generate_edges() -> Path:
-    filestructure_path = (state.out_dir / "filestructure.json").resolve()
+    filestructure_path = (state.repo_dir / "filestructure.json").resolve()
     if not filestructure_path.exists():
         raise RuntimeError(
             "filestructure.json not found. Call POST /tree first."
@@ -247,7 +247,8 @@ def generate_edges() -> Path:
             }
             edges.append(edge)
 
-    edges_path = (state.out_dir / "edges.json").resolve()
+    edges_path = (state.repo_dir / "edges.json").resolve()
+    edges_path.parent.mkdir(parents=True, exist_ok=True)
     edges_path.write_text(
         json.dumps({"edges": edges}, indent=2), encoding="utf-8"
     )
