@@ -19,8 +19,6 @@ PYTHON_IMPORT_TYPES: frozenset[str] = frozenset({
     "future_import_statement",
 })
 
-GO_IMPORT_TYPES: frozenset[str] = frozenset({"import_declaration"})
-
 _used_edge_ids: set[str] = set()
 
 def _reset_edge_ids() -> None:
@@ -106,47 +104,8 @@ def _parse_python_import_node(node) -> list[dict]:
     return imports
 
 
-def _parse_go_import_node(node) -> list[dict]:
-    text = node.text.decode("utf-8", errors="replace").strip()
-    start_line = node.start_point[0] + 1
-    end_line = node.end_point[0] + 1
-    imports: list[dict] = []
-
-    specs: list = []
-    stack = [node]
-    while stack:
-        cur = stack.pop()
-        if cur.type == "import_spec":
-            specs.append(cur)
-        stack.extend(reversed(cur.children))
-
-    for child in specs:
-        path_node = child.child_by_field_name("path")
-        name_node = child.child_by_field_name("name")
-        module = (
-            path_node.text.decode("utf-8", errors="replace").strip('"')
-            if path_node is not None
-            else child.text.decode("utf-8", errors="replace").strip()
-        )
-        alias = None
-        if name_node is not None:
-            alias_text = name_node.text.decode("utf-8", errors="replace")
-            if alias_text != "_":
-                alias = alias_text
-        imports.append({
-            "module": module,
-            "imported_symbols": [],
-            "aliases": [alias] if alias else [],
-            "start_line": start_line,
-            "end_line": end_line,
-            "raw": text,
-        })
-
-    return imports
-
-
 def _extract_file_imports(file_path: Path, language: str) -> list[dict]:
-    if language not in ("python", "go"):
+    if language != "python":
         return []
 
     try:
@@ -155,60 +114,17 @@ def _extract_file_imports(file_path: Path, language: str) -> list[dict]:
     except Exception:
         return []
 
-    if language == "python":
-        import_types = PYTHON_IMPORT_TYPES
-        parse_node = _parse_python_import_node
-    else:
-        import_types = GO_IMPORT_TYPES
-        parse_node = _parse_go_import_node
-
     imports: list[dict] = []
     stack = [ts_tree.root_node]
 
     while stack:
         node = stack.pop()
-        if node.type in import_types:
-            imports.extend(parse_node(node))
+        if node.type in PYTHON_IMPORT_TYPES:
+            imports.extend(_parse_python_import_node(node))
         else:
             stack.extend(reversed(node.children))
 
     return imports
-
-
-def _resolve_go_internal_target(
-    module_name: str,
-    repo_path: Path,
-    path_to_id: dict[str, str],
-) -> tuple[bool, str | None, str | None]:
-    module_name = module_name.strip()
-    if not module_name:
-        return False, None, None
-
-    # Go import paths may include the repo's own module prefix (e.g.
-    # github.com/owner/repo/internal/pkg). Progressively strip leading
-    # segments until we find a directory that lives inside the repo.
-    parts = module_name.split("/")
-    for i in range(len(parts)):
-        rel_dir = Path(*parts[i:])
-        cand_dir = repo_path / rel_dir
-        try:
-            if not cand_dir.is_dir():
-                continue
-        except OSError:
-            continue
-
-        # Prefer a matching file directly inside the package dir.
-        for file_path in sorted(cand_dir.iterdir()):
-            if file_path.suffix != ".go" or not file_path.is_file():
-                continue
-            try:
-                cand_str = str(file_path.resolve())
-            except OSError:
-                continue
-            if cand_str in path_to_id:
-                return True, cand_str, path_to_id[cand_str]
-
-    return False, None, None
 
 
 def _resolve_internal_target(
@@ -217,16 +133,11 @@ def _resolve_internal_target(
     source_file_path: Path,
     repo_path: Path,
     path_to_id: dict[str, str],
-    language: str = "python",
 ) -> tuple[bool, str | None, str | None]:
     if not module_name and not symbols:
         return False, None, None
 
     repo_path = repo_path.resolve()
-
-    if language == "go":
-        return _resolve_go_internal_target(module_name, repo_path, path_to_id)
-
     candidates: list[Path] = []
 
     if module_name.startswith("."):
@@ -317,7 +228,6 @@ def generate_edges() -> Path:
                 source_file_path=file_path,
                 repo_path=state.repo_path,
                 path_to_id=path_to_id,
-                language=language,
             )
 
             edge = {

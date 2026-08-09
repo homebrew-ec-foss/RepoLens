@@ -4,11 +4,10 @@ import logging
 import os
 from pathlib import Path
 import json
-
+from app.api.init import init_embedder
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import FileResponse
-
-from app.models.schemas import RepoRequest, LocalRepoRequest, OpenRepoRequest, StatusResponse, QueryRequest, RAGAnswer, ConfigRequest, HealthResponse, ConfigResponse
+from app.models.schemas import RepoRequest, LocalRepoRequest, StatusResponse, QueryRequest, RAGAnswer, ConfigRequest, HealthResponse, ConfigResponse
 from app.services import github as github_svc
 from app.services import keyword_search as keyword_search_svc
 from app.services import nodes as nodes_svc
@@ -16,6 +15,7 @@ from app.services import summaries as summaries_svc
 from app.services import treesitter as ts_svc
 from app.services import keyword_search as keyword_search_svc
 from app.storage.state import state
+from app.services.classifier import classify
 from app.services import edges as edges_svc
 from app.services import rag as rag_svc
 from app.services import vectorstore as vectorstore_svc
@@ -34,7 +34,7 @@ async def post_config(body: ConfigRequest) -> StatusResponse:
         try:
             client = genai.Client(api_key=body.gemini_api_key)
             # Validate the key by making a minimal API call
-            client.models.get(model="gemini-1.5-flash")
+            client.models.get(model="gemini-3.1-flash-lite")
         except ClientError as e:
             logger.error(f"API key validation failed: {e}")
             raise HTTPException(status_code=400, detail="API key is invalid or unable to connect.")
@@ -47,6 +47,18 @@ async def post_config(body: ConfigRequest) -> StatusResponse:
         # Reset all cached genai clients so they pick up the new key
         summaries_svc._client = None
         rag_svc._client = None
+        vectorstore_svc._client = None if hasattr(vectorstore_svc, '_client') else None
+        keyword_search_svc._client = None
+        try:
+            from app.services import embeddings as emb_svc
+            emb_svc._client = None
+        except Exception:
+            pass
+        try:
+            from app.services import classifier as cls_svc
+            cls_svc._client = None
+        except Exception:
+            pass
 
         state.save()
         
@@ -145,49 +157,6 @@ def _validate_local_folder(folder_path: str) -> Path:
     return folder
 
 
-@router.post("/repo/open", response_model=StatusResponse, status_code=status.HTTP_200_OK)
-def post_repo_open(body: OpenRepoRequest) -> StatusResponse:
-    logger.info("POST /repo/open path=%s", body.path)
-    raw = (body.path or "").strip().strip('"').strip("'")
-    if not raw:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Repository path is required.",
-        )
-    folder = Path(raw).expanduser().resolve()
-    if not folder.is_dir():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Repository folder does not exist: {folder}",
-        )
-    if folder == state.out_dir.resolve():
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Cannot use RepoLens' output directory as a repository.",
-        )
-    # Use the already-registered owner/name when available so chat history
-    # and sidebar identity stay consistent across restarts.
-    owner = body.owner or "local"
-    name = body.name or folder.name
-    for spec in state.registered_repos:
-        if str(Path(spec.get("path", "")).resolve()) == str(folder.resolve()):
-            owner = spec.get("owner") or owner
-            name = spec.get("name") or name
-            break
-    state.repo_path = folder
-    state.write_repo_state({
-        "kind": "local",
-        "owner": owner,
-        "name": name,
-        "repo_path": str(folder),
-    })
-    state.register_repo("local", owner, name, folder)
-    logger.info("Repo activated: %s/%s -> %s", owner, name, folder)
-    return StatusResponse(
-        status="ok",
-        detail=f"Repository activated: {owner}/{name}",
-    )
-
 @router.post("/repo/local", response_model=StatusResponse, status_code=status.HTTP_200_OK)
 def post_repo_local(body: LocalRepoRequest) -> StatusResponse:
     logger.info("POST /repo/local folder_path=%s", body.folder_path)
@@ -278,6 +247,23 @@ def post_summary():
         "total_nodes": result["total_nodes"],
     }
 
+@router.post("/query",response_model=StatusResponse,status_code=status.HTTP_200_OK)
+async def user_query(body: QueryRequest) -> StatusResponse:
+        logger.info("POST /query")
+        try:
+            res = classify(body.query)
+        except RuntimeError as exc:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+        except Exception as exc:
+            logger.exception("Unexpected error in /summary")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
+    
+        return StatusResponse(
+            status="ok",
+            detail=(
+                f"result = {res}"
+            ),
+        )
 @router.post("/index", response_model=StatusResponse, status_code=status.HTTP_200_OK)
 def post_index() -> StatusResponse:
     logger.info("POST /index")
@@ -306,15 +292,6 @@ async def ask(body: QueryRequest) -> RAGAnswer:
             target = (state.out_dir / "repo" / body.repo_owner / body.repo_name).resolve()
             if target.exists():
                 state.repo_path = target
-            else:
-                for spec in state.registered_repos:
-                    if (spec.get("owner") == body.repo_owner and spec.get("name") == body.repo_name) or (
-                        spec.get("owner") == "local" and spec.get("name") == body.repo_name
-                    ):
-                        candidate = Path(spec.get("path", "")).resolve()
-                        if candidate.is_dir():
-                            state.repo_path = candidate
-                            break
                 
         if not state.repo_path:
             raise RuntimeError("No repository parsed. Call POST /repo first.")
