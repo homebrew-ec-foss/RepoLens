@@ -148,6 +148,7 @@ selectedId: null,
   explorerSearch: '',
   chatSending: false,
   deepThink: false,
+  userChoice:"cloud"
 };
 
 // ─── API Layer ──────────────────────────────────────────────────
@@ -368,7 +369,12 @@ function renderSetupCloud() {
       saveBtn.textContent = 'Validating...';
       validationMsg.innerHTML = '';
       try {
-        await api('/config', { method: 'POST', body: { gemini_api_key: key, provider: 'cloud' } });
+        let userChoice = "cloud";
+        if(state.userChoice == "local"){
+          userChoice = "local";
+        }
+        console.log(userChoice);
+        await api('/config', { method: 'POST', body: { gemini_api_key: key, provider: userChoice} });
         const health = await api('/health');
         if (health.gemini_key_set) {
           validationMsg.innerHTML = '<span class="validation-success">✓ Connected successfully</span>';
@@ -413,7 +419,7 @@ function renderSetupLocal() {
 
   const reqs = el('div', { class: 'requirements-list' });
   const requirements = [
-    { icon: Icons.settings, text: 'Embedding model (gte-modernbert-base) runs locally via sentence-transformers on CPU', status: 'info' },
+    { icon: Icons.settings, text: 'Embedding model (gte-modernbert-base) runs locally via sentence-transformers on GPU', status: 'info' },
     { icon: Icons.folder, text: 'Qdrant vector database stored locally under out/qdrant_db', status: 'info' },
     { icon: Icons.plus, text: 'Embedding model weights cached under ./models', status: 'info' },
     { icon: Icons.repo, text: 'The LLM itself is cloud-hosted via the Gemini API (requires an API key)', status: 'info' },
@@ -434,8 +440,8 @@ function renderSetupLocal() {
   inner.appendChild(notice);
 
   const actions = el('div', { class: 'modal-actions', style: { justifyContent: 'space-between', marginTop: '24px' } });
-  actions.appendChild(el('button', { class: 'btn btn-ghost', onClick: () => navigate('setup') }, 'Back'));
-  actions.appendChild(el('button', { class: 'btn btn-primary btn-lg', onClick: () => navigate('setup-cloud') }, 'Set Up Gemini API'));
+  actions.appendChild(el('button', { class: 'btn btn-ghost', onClick: () => {navigate('setup')}}, 'Back'));
+  actions.appendChild(el('button', { class: 'btn btn-primary btn-lg', onClick: () => {state.userChoice = 'local';navigate('setup-cloud')} }, 'Set Up Gemini API'));
   inner.appendChild(actions);
 
   container.appendChild(inner);
@@ -1631,7 +1637,7 @@ function renderSettings() {
     el('span', { class: 'text-sm font-mono' }, state.config?.model || 'gemini-3.1-flash-lite'),
   ));
 
-  aiSection.appendChild(makeSettingsRow('Embedding Model', 'Local sentence-transformers (CPU)',
+  aiSection.appendChild(makeSettingsRow('Embedding Model', 'Local sentence-transformers (GPU)',
     el('span', { class: 'text-sm font-mono' }, state.config?.embedding_model || 'Alibaba-NLP/gte-modernbert-base'),
   ));
 

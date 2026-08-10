@@ -89,6 +89,14 @@ class AppState:
         self._write_global_state(data)
 
     @property
+    def user_choice(self):
+        return self._global_state().get("user_choice")
+    @user_choice.setter
+    def user_choice(self,val):
+        data = self._global_state()
+        data['user_choice'] = val
+        self._write_global_state(data)
+    @property
     def registered_repos(self) -> list[dict]:
         return self._global_state().get("registered_repos") or []
 
