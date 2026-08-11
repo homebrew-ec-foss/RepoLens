@@ -43,7 +43,6 @@ async def post_config(body: ConfigRequest) -> StatusResponse:
             
         os.environ["GEMINI_API_KEY"] = body.gemini_api_key
         state.gemini_api_key = body.gemini_api_key
-        state.user_choice = body.provider
         # Reset all cached genai clients so they pick up the new key
         summaries_svc._client = None
         rag_svc._client = None
@@ -246,7 +245,6 @@ def post_summary():
         "summaries_completed": result["summarized_nodes"],
         "total_nodes": result["total_nodes"],
     }
-
 
 @router.post("/index", response_model=StatusResponse, status_code=status.HTTP_200_OK)
 def post_index() -> StatusResponse:
