@@ -51,17 +51,24 @@ def _compute_children_ids(nodes: list[dict]) -> None:
                         node["children_ids"].append(candidate["id"])
 
 def generate_nodes() -> Path:
-    filestructure_path = (state.out_dir / "filestructure.json").resolve()
+    filestructure_path = (state.repo_dir / "filestructure.json").resolve()
     if not filestructure_path.exists():
         raise RuntimeError(
             "filestructure.json not found. Call POST /tree first."
         )
-
-    logger.info("Reading %s", filestructure_path)
-    structure: dict = json.loads(filestructure_path.read_text(encoding="utf-8"))
-
+    # ".raw_nodes.json" is just json with every file
+    # code content and no children mapping
     raw_nodes: list[dict] = []
-    _collect_raw_nodes(structure, structure.get("id", ""), raw_nodes)
+    if state.raw_nodes:
+        raw_nodes = json.loads(json.dumps(state.raw_nodes))
+    else:
+        raw_nodes_cache = (state.repo_dir / ".raw_nodes.json").resolve()
+        if raw_nodes_cache.exists():
+            raw_nodes = json.loads(raw_nodes_cache.read_text(encoding="utf-8"))
+        else:
+            logger.info("Reading %s", filestructure_path)
+            structure: dict = json.loads(filestructure_path.read_text(encoding="utf-8"))
+            _collect_raw_nodes(structure, structure.get("id", ""), raw_nodes)
 
     for node in raw_nodes:
         node.setdefault("children_ids", [])
@@ -69,7 +76,8 @@ def generate_nodes() -> Path:
 
     _compute_children_ids(raw_nodes)
 
-    nodes_path = (state.out_dir / "nodes.json").resolve()
+    nodes_path = (state.repo_dir / "nodes.json").resolve()
+    nodes_path.parent.mkdir(parents=True, exist_ok=True)
     nodes_path.write_text(
         json.dumps({"nodes": raw_nodes}, indent=2), encoding="utf-8"
     )
