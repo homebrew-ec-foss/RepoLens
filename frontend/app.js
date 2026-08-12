@@ -1554,6 +1554,7 @@ function renderMarkdown(text, refsById) {
 
 function openNodeRef(ref) {
   if (!ref || !ref.id) return;
+  console.log("test")
   openCodePanel({
     id: ref.id,
     title: ref.title || ref.id,
@@ -1693,7 +1694,10 @@ function displayPath(p) {
   if (m) return m[1];
   return p2;
 }
-
+function detect_file_or_folder(node_id){
+  
+  
+}
 function displayNodeTypeLabel(nodeType) {
   const t = (nodeType || '');
   return t.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
@@ -1960,7 +1964,6 @@ function renderCodePanel() {
   panel.appendChild(header);
   panel.appendChild(body);
   overlay.appendChild(panel);
-
   api('/get_code?node_id=' + encodeURIComponent(src.id))
     .then((data) => {
       const bodyEl = document.getElementById('code-panel-body');
@@ -1972,7 +1975,7 @@ function renderCodePanel() {
       bodyEl.innerHTML = '';
       bodyEl.appendChild(el('div', { class: 'code-panel-error' },
         el('span', { html: Icons.x }),
-        el('span', {}, 'Failed to load code: ' + err.message),
+        el('span', {}, 'Failed to load code: ',err.message),
       ));
     });
 
@@ -2360,7 +2363,7 @@ function updateInspector() {
     }
     
     const target = { ...(treeTarget || {}), ...(nodeTarget || {}) };
-    const nodeType = target.node_type || target.type || 'file';
+    var nodeType = target.node_type || target.type || 'file';
     const meta = getNodeTypeMeta(nodeType);
     const title = target.title || target.name || 'Unknown';
     const pathStr = displayPath(target.path) || target.path || '';
@@ -2372,7 +2375,9 @@ function updateInspector() {
         : '—';
 
     container.appendChild(el('h3', { class: 'inspector-title', title }, title));
-
+    
+    console.log(nodeType)
+    meta.label = nodeType
     const metaRow = el('div', { class: 'inspector-meta' });
     metaRow.appendChild(el('span', { class: 'badge badge-accent inspector-type' }, meta.label || displayNodeTypeLabel(nodeType)));
     if (target.language) {
@@ -2382,7 +2387,12 @@ function updateInspector() {
 
     const rows = el('div', { class: 'inspector-rows' });
     rows.appendChild(makeInspectorRow('Type', meta.label || displayNodeTypeLabel(nodeType)));
+    if(nodeType == "repository"){
+      rows.appendChild(makeInspectorRow('Location', pathStr || '—'));
+    }
+    else{
     rows.appendChild(makeInspectorRow('File', pathStr || '—'));
+    }
     rows.appendChild(makeInspectorRow('Lines', linesStr));
     container.appendChild(rows);
 
@@ -2394,10 +2404,13 @@ function updateInspector() {
     } else {
         container.appendChild(el('div', { class: 'text-sm text-tertiary' }, 'No summary available for this node.'));
     }
-
-    container.appendChild(el('button', {
+    api('/get_code?node_id=' + encodeURIComponent(target.id))
+    .then((data) => {
+      container.appendChild(el('button', {
         class: 'btn btn-secondary inspector-detail-btn',
-        onClick: () => openCodePanel({
+        onClick: () => {
+          console.log(target.path)
+          openCodePanel({
             id: target.id,
             title,
             node_type: nodeType,
@@ -2405,11 +2418,17 @@ function updateInspector() {
             language: target.language,
             start_line: hasLines ? target.start_line : 1,
             end_line: hasLines && target.end_line != null ? target.end_line : target.start_line,
-        }),
+        })
+      }
     },
         el('span', { html: Icons.braces }),
         el('span', {}, 'View details'),
     ));
+    })
+    .catch((err) => {
+      nodeType = "Folder"
+    });
+    
 }
 
 function makeInspectorRow(label, value) {
