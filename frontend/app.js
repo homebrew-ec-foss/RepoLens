@@ -1216,6 +1216,22 @@ function renderTreeInto(container, structure, search) {
   container.appendChild(renderTreeNode(structure, 0, search?.toLowerCase()));
 }
 
+function handleTreeSelection(node, event) {
+  if (!node) return;
+
+  if (event) event.stopPropagation();
+
+  if (node.type === 'file' || node.type === 'repository') {
+    state.selectedId = node.id;
+    updateInspector();
+    const tc = document.getElementById('tree-container');
+    if (tc) renderTreeInto(tc, state.structure);
+    return;
+  }
+
+  toggleNode(node.id);
+}
+
 function renderTreeNode(node, depth, search) {
   const frag = el('div', { class: depth > 0 ? 'tree-node' : '' });
 
@@ -1227,7 +1243,7 @@ function renderTreeNode(node, depth, search) {
   const icon = node.type === 'repository' ? Icons.repo : node.type === 'folder' ? Icons.folder : getFileIcon(node.name);
 
   const isSelected = state.selectedId === node.id;
-const item = el('div', { class: `tree-item ${isSelected ? 'selected' : ''}`, onClick: () => toggleNode(node.id) });
+const item = el('div', { class: `tree-item ${isSelected ? 'selected' : ''}`, onClick: (event) => handleTreeSelection(node, event) });
 
   if (hasChildren || isFile) {
     const toggle = el('span', { class: `tree-toggle ${isExpanded ? 'expanded' : ''}`, html: Icons.chevronRight });
