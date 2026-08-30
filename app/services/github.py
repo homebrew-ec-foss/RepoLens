@@ -11,7 +11,11 @@ import platform
 logger = logging.getLogger(__name__)
 
 # prehand regex for parsing GitHub URLs
-_GITHUB_RE = re.compile(r"^https?://github\.com/(?P<owner>[^/]+)/(?P<repo>[^/]+?)(?:\.git)?$")
+# supports for "/tree/<branch>" suffix, e.g. .../owner/repo/tree/dev
+# thanks musshroom !
+_GITHUB_RE = re.compile(
+    r"^https?://github\.com/(?P<owner>[^/]+)/(?P<repo>[^/]+?)(?:\.git)?(?:/tree/(?P<branch>[^/]+))?$"
+)
 
 
 def _parse_github_url(url: str) -> tuple[str, str]:
@@ -22,7 +26,7 @@ def _parse_github_url(url: str) -> tuple[str, str]:
     m = _GITHUB_RE.match(url)
     if not m:
         raise ValueError(f"Not a valid GitHub repository URL: {url!r}")
-    return m.group("owner"), m.group("repo")
+    return m.group("owner"), m.group("repo"), m.group("branch")
 
 
 def remove_readonly(func,path,exc):

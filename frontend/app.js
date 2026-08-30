@@ -1570,7 +1570,6 @@ function renderMarkdown(text, refsById) {
 
 function openNodeRef(ref) {
   if (!ref || !ref.id) return;
-  console.log("test")
   openCodePanel({
     id: ref.id,
     title: ref.title || ref.id,
@@ -1656,7 +1655,7 @@ function renderSettings() {
   aiSection.appendChild(makeSettingsRow('Vector Database', 'Qdrant (embedded local)',
     el('span', { class: 'text-sm font-mono' }, state.config?.vector_db || 'Qdrant (embedded local)'),
   ));
-  
+
   aiSection.appendChild(makeSettingsRow('API Key', state.config?.api_key_set ? 'Configured' : 'Not set',
     el('div', { class: 'flex-center gap-2' },
       el('span', { class: state.config?.api_key_set ? 'badge badge-success' : 'badge badge-error' }, state.config?.api_key_set ? `${state.config.api_key_preview}` : 'Missing'),
@@ -1710,10 +1709,7 @@ function displayPath(p) {
   if (m) return m[1];
   return p2;
 }
-function detect_file_or_folder(node_id){
-  
-  
-}
+
 function displayNodeTypeLabel(nodeType) {
   const t = (nodeType || '');
   return t.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
@@ -1980,6 +1976,7 @@ function renderCodePanel() {
   panel.appendChild(header);
   panel.appendChild(body);
   overlay.appendChild(panel);
+
   api('/get_code?node_id=' + encodeURIComponent(src.id))
     .then((data) => {
       const bodyEl = document.getElementById('code-panel-body');
