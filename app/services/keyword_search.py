@@ -2,8 +2,55 @@ import json
 import re
 from rank_bm25 import BM25Okapi
 from pathlib import Path
+from google import genai
+from google.genai import types
+from dotenv import load_dotenv
 
 from app.storage.state import state
+
+load_dotenv()
+_client = None
+
+def _get_client():
+    global _client
+    if _client is None:
+        _client = genai.Client()
+    return _client
+def refine_nodes(query, nodes):
+    prompt = f"""
+You are given a user query and a set of candidate code nodes.
+Your task is to select the single most relevant node for the query.
+
+Instructions:
+- Read the user's query carefully.
+- Compare the candidate nodes in the provided set.
+- Choose the one node that is most relevant to the query.
+- If none seem relevant, return null.
+- Return valid JSON only.
+- The output must be either:
+  - a single full node object matching the candidate node schema, or
+  - null
+
+User query:
+{query}
+
+Candidate nodes:
+{json.dumps(nodes, ensure_ascii=False, indent=2)}
+"""
+    res = _get_client().models.generate_content(
+        model='gemini-3.1-flash-lite',
+        contents=prompt,
+        config=types.GenerateContentConfig(response_mime_type='application/json')
+    )
+    text = getattr(res, 'text', '') or ''
+    try:
+        parsed = json.loads(text)
+        parsed = {"res": parsed}
+        if isinstance(parsed, dict):
+            return parsed
+        return None
+    except json.JSONDecodeError:
+        return None
 
 TYPE_FILTERS = {
     'function': {
@@ -136,6 +183,16 @@ def _nodes_json_path() -> Path:
     return state.repo_dir / 'nodes.json'
 
 
+def answer_query(query):
+    obj = _get_search_engine(_nodes_json_path())
+    return refine_nodes(query, obj.answer_query(query))['res']
+
+def filter_nodes_based_on_type(query, type_filter):
+    obj = _get_search_engine(_nodes_json_path())
+    hits = obj.answer_query(query, top_k=50)
+    allowed = TYPE_FILTERS.get(type_filter, {type_filter})
+    return [item for item in hits if item.get('node_type') in allowed]
+
 def search_nodes(query):
     if not query or not str(query).strip():
         return []
@@ -189,3 +246,8 @@ def search_nodes(query):
             ],
         })
     return results
+
+def filter_based_on_type(query, type_filter):
+    if not query or not str(query).strip():
+        return []
+    return filter_nodes_based_on_type(query, type_filter)

@@ -372,6 +372,7 @@ function renderSetupCloud() {
         const health = await api('/health');
         if (health.gemini_key_set) {
           validationMsg.innerHTML = '<span class="validation-success">✓ Connected successfully</span>';
+          state.config = await api('/config');
           toast('API key saved', 'success');
           await loadRepos();
           setTimeout(() => navigate('home'), 600);
@@ -1215,6 +1216,22 @@ function renderTreeInto(container, structure, search) {
   container.appendChild(renderTreeNode(structure, 0, search?.toLowerCase()));
 }
 
+function handleTreeSelection(node, event) {
+  if (!node) return;
+
+  if (event) event.stopPropagation();
+
+  if (node.type === 'file' || node.type === 'repository') {
+    state.selectedId = node.id;
+    updateInspector();
+    const tc = document.getElementById('tree-container');
+    if (tc) renderTreeInto(tc, state.structure);
+    return;
+  }
+
+  toggleNode(node.id);
+}
+
 function renderTreeNode(node, depth, search) {
   const frag = el('div', { class: depth > 0 ? 'tree-node' : '' });
 
@@ -1226,7 +1243,7 @@ function renderTreeNode(node, depth, search) {
   const icon = node.type === 'repository' ? Icons.repo : node.type === 'folder' ? Icons.folder : getFileIcon(node.name);
 
   const isSelected = state.selectedId === node.id;
-const item = el('div', { class: `tree-item ${isSelected ? 'selected' : ''}`, onClick: () => toggleNode(node.id) });
+const item = el('div', { class: `tree-item ${isSelected ? 'selected' : ''}`, onClick: (event) => handleTreeSelection(node, event) });
 
   if (hasChildren || isFile) {
     const toggle = el('span', { class: `tree-toggle ${isExpanded ? 'expanded' : ''}`, html: Icons.chevronRight });
@@ -1971,7 +1988,7 @@ function renderCodePanel() {
       bodyEl.innerHTML = '';
       bodyEl.appendChild(el('div', { class: 'code-panel-error' },
         el('span', { html: Icons.x }),
-        el('span', {}, 'Failed to load code: ' + err.message),
+        el('span', {}, 'Failed to load code: ',err.message),
       ));
     });
 
@@ -2117,18 +2134,6 @@ async function loadRepos() {
 
 async function openRepo(repo) {
   state.activeRepo = { owner: repo.owner, name: repo.name, path: repo.path };
-
-  try {
-    await api('/repo/open', {
-      method: 'POST',
-      body: { path: repo.path, owner: repo.owner, name: repo.name },
-    });
-  } catch {
-    state.structure = null;
-    state.nodes = null;
-    navigate('home');
-    return;
-  }
 
   try {
     state.structure = await api('/structure');
@@ -2371,7 +2376,7 @@ function updateInspector() {
     }
     
     const target = { ...(treeTarget || {}), ...(nodeTarget || {}) };
-    const nodeType = target.node_type || target.type || 'file';
+    var nodeType = target.node_type || target.type || 'file';
     const meta = getNodeTypeMeta(nodeType);
     const title = target.title || target.name || 'Unknown';
     const pathStr = displayPath(target.path) || target.path || '';
@@ -2383,7 +2388,9 @@ function updateInspector() {
         : '—';
 
     container.appendChild(el('h3', { class: 'inspector-title', title }, title));
-
+    
+    console.log(nodeType)
+    meta.label = nodeType
     const metaRow = el('div', { class: 'inspector-meta' });
     metaRow.appendChild(el('span', { class: 'badge badge-accent inspector-type' }, meta.label || displayNodeTypeLabel(nodeType)));
     if (target.language) {
@@ -2393,7 +2400,12 @@ function updateInspector() {
 
     const rows = el('div', { class: 'inspector-rows' });
     rows.appendChild(makeInspectorRow('Type', meta.label || displayNodeTypeLabel(nodeType)));
+    if(nodeType == "repository"){
+      rows.appendChild(makeInspectorRow('Location', pathStr || '—'));
+    }
+    else{
     rows.appendChild(makeInspectorRow('File', pathStr || '—'));
+    }
     rows.appendChild(makeInspectorRow('Lines', linesStr));
     container.appendChild(rows);
 
@@ -2405,10 +2417,13 @@ function updateInspector() {
     } else {
         container.appendChild(el('div', { class: 'text-sm text-tertiary' }, 'No summary available for this node.'));
     }
-
-    container.appendChild(el('button', {
+    api('/get_code?node_id=' + encodeURIComponent(target.id))
+    .then((data) => {
+      container.appendChild(el('button', {
         class: 'btn btn-secondary inspector-detail-btn',
-        onClick: () => openCodePanel({
+        onClick: () => {
+          console.log(target.path)
+          openCodePanel({
             id: target.id,
             title,
             node_type: nodeType,
@@ -2416,11 +2431,17 @@ function updateInspector() {
             language: target.language,
             start_line: hasLines ? target.start_line : 1,
             end_line: hasLines && target.end_line != null ? target.end_line : target.start_line,
-        }),
+        })
+      }
     },
         el('span', { html: Icons.braces }),
         el('span', {}, 'View details'),
     ));
+    })
+    .catch((err) => {
+      nodeType = "Folder"
+    });
+    
 }
 
 function makeInspectorRow(label, value) {

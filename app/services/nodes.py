@@ -2,11 +2,21 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from pathlib import Path
 
 from app.storage.state import state
 
 logger = logging.getLogger(__name__)
+from dotenv import load_dotenv
+from google import genai
+from google.genai import types
+
+load_dotenv()
+try:
+    _client = genai.Client()
+except Exception:
+    _client = None
 
 def _collect_raw_nodes(tree_entry: dict, file_entry_id: str, acc: list[dict]) -> None:
     if tree_entry.get("type") == "file":
@@ -84,3 +94,76 @@ def generate_nodes() -> Path:
 
     logger.info("nodes.json written: %d nodes", len(raw_nodes))
     return nodes_path
+
+def find_files_in_tree(id,data):
+    if data['id'] == id:
+        return data
+    if 'children' in data:
+        for child in data['children']:
+            result = find_files_in_tree(id,child)
+            if result:
+                return result
+    return None
+def get_nodes_based_on_id(id):
+    out_folder = Path(__file__).parent.parent.parent / 'out'
+    with open(out_folder / 'nodes.json', 'r') as f:
+        data = json.load(f)
+    data = data['nodes']
+    for item in data:
+        if item['id'] == id:
+            return item
+    data = json.loads((out_folder / 'filestructure.json').read_text(encoding="utf-8"))
+    return find_files_in_tree(id,data)
+
+def retrieve_parent_and_child_nodes(pid,cid=None):
+    p_node = get_nodes_based_on_id(pid)
+    if cid:
+
+        c_node = get_nodes_based_on_id(cid)
+    else:
+        c_node = None
+
+    if not hasattr(p_node,'node_type'):
+        p_node['node_type'] = 'file'
+        p_node['start_line'] = 'Encompassing entire file'
+        p_node['end_line'] = 'Encompassing entire file'
+    if p_node:
+        p_node = {"Path":p_node['path'],"node_type":p_node['node_type'],"identifier":p_node['id'],"line_range":f"{p_node['start_line']} - {p_node['end_line']}","summary":p_node['summary']}
+    if c_node:
+        c_node = {"Path":c_node['path'],"node_type":c_node['node_type'],"identifier":c_node['id'],"line_range":f"{c_node['start_line']} - {c_node['end_line']}","summary":c_node['summary']}
+    if p_node and c_node:
+        return {"parent_node":p_node,"child_node":c_node}
+    if p_node and not c_node:
+        return {"parent_node":p_node,"child_node":None}
+
+    if c_node and not p_node:
+        return {"parent_node":None,"child_node":c_node}
+    if not p_node and not c_node:
+        return {"parent_node":None,"child_node":None}
+
+def answer_query_with_context(nodes,query):
+    
+    prompt = f"""You are a code assistant. You are given a query and a context of code nodes. Your task is to answer the query based on the context provided.
+    You will be given a query and a context of code nodes. Your task is to answer the query based on the context provided. You should only use the information provided in the context to answer the query. If the context does not contain enough information to answer the query, you should respond with "I don't know". You should not make up any information or provide an answer that is not supported by the context.
+    Query: {query}
+    The context consists of a node, a parent node, and child nodes. The node is the main node that is relevant to the query. The parent node is the parent of the main node, and the child nodes are the children of the main node. You should use the information from the main node, parent node, and child nodes to answer the query. If any of these nodes are not available, you should ignore them in your answer.
+    Context:
+    Node: {nodes}
+    Your job is to provide a concise and accurate answer to the query based on the context provided. If the context does not contain enough information to answer the query, you should respond with "I don't know". You should not make up any information or provide an answer that is not supported by the context.
+    Also another thing you must do is answer the user's query along with the path of the node and the line number's of the selected lines in which the answer is found. If the answer is not found in any of the nodes, you should respond with "I don't know". You should not make up any information or provide an answer that is not supported by the context.
+
+    The final response should be in the following JSON format:
+    {{
+        "answer": "<your answer here>",
+        "path": "<path of the node where the answer is found>",
+        "line_range": "<line range of the node where the answer is found>"
+    }}
+    """
+    response = _client.models.generate_content(
+        model="gemini-3.1-flash-lite",
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+        ),
+    )
+    return response.text.strip() if response and hasattr(response, "text") else "I don't know"
